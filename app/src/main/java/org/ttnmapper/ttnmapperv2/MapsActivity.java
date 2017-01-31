@@ -1,30 +1,56 @@
 package org.ttnmapper.ttnmapperv2;
 
+import android.app.ActivityManager;
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.support.v4.app.FragmentActivity;
+import android.content.ServiceConnection;
 import android.os.Bundle;
-import android.support.v7.app.ActionBarActivity;
+import android.os.IBinder;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
-import android.widget.PopupWindow;
+import android.widget.CompoundButton;
 import android.widget.TextView;
+import android.widget.Toast;
+import android.widget.ToggleButton;
 
-import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
-import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.MarkerOptions;
 
-public class MapsActivity extends AppCompatActivity implements OnMapReadyCallback {
+public class MapsActivity extends AppCompatActivity implements OnMapReadyCallback, CompoundButton.OnCheckedChangeListener {
 
     private final String TAG = "MapsActivity";
+    //service handles
+    TTNMapperService mService;
+    boolean mBound = false;
     private GoogleMap mMap;
+    /**
+     * Defines callbacks for service binding, passed to bindService()
+     */
+    private ServiceConnection mConnection = new ServiceConnection() {
+
+        @Override
+        public void onServiceConnected(ComponentName className,
+                                       IBinder service) {
+            Log.d(TAG, "onServiceConected");
+            // We've bound to LocalService, cast the IBinder and get LocalService instance
+            TTNMapperService.LocalBinder binder = (TTNMapperService.LocalBinder) service;
+            mService = binder.getService();
+            mBound = true;
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName arg0) {
+            Log.d(TAG, "onServiceDisconnected");
+            mBound = false;
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -34,6 +60,14 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
+
+        ToggleButton toggleButton = (ToggleButton) findViewById(R.id.toggleButtonStartLogging);
+        toggleButton.setOnCheckedChangeListener(this);
+        if (isMyServiceRunning(TTNMapperService.class)) {
+            toggleButton.setChecked(true);
+            Intent startServiceIntent = new Intent(this, TTNMapperService.class);
+            bindService(startServiceIntent, mConnection, Context.BIND_AUTO_CREATE);
+        }
 
         MyApplication mApplication = (MyApplication)getApplicationContext();
         if(!mApplication.isConfigured())
@@ -78,6 +112,20 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         {
             tv.setText("Ready to start logging.");
         }
+
+        if (isMyServiceRunning(TTNMapperService.class)) {
+            restartLogging();
+        }
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        // Unbind from the service
+        if (mBound) {
+            unbindService(mConnection);
+            mBound = false;
+        }
     }
 
     @Override
@@ -103,6 +151,42 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
     }
 
+    //toggle button to start/stop logging
+    @Override
+    public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+        if (isChecked) {
+            MyApplication mApplication = (MyApplication) getApplicationContext();
+            if (mApplication.isConfigured()) {
+                Log.d(TAG, "Starting logging");
+                startLoggingService();
+            } else {
+                Toast.makeText(this, "You need to link a device before you can start logging!", Toast.LENGTH_LONG).show();
+                buttonView.setChecked(false);
+            }
+        } else {
+            Log.d(TAG, "Stopping logging");
+            stopLoggingService();
+        }
+
+    }
+
+    public void restartLogging() {
+        Log.d(TAG, "Restarting logging");
+
+        stopLoggingService();
+
+        MyApplication mApplication = (MyApplication) getApplicationContext();
+        if (mApplication.isConfigured()) {
+            Log.d(TAG, "Starting logging");
+            startLoggingService();
+            Toast.makeText(this, "Logging restarted", Toast.LENGTH_LONG).show();
+        } else {
+            Toast.makeText(this, "You need to link a device before you can start logging!", Toast.LENGTH_LONG).show();
+            ToggleButton toggleButton = (ToggleButton) findViewById(R.id.toggleButtonStartLogging);
+            toggleButton.setChecked(false);
+        }
+    }
+
     /**
      * Manipulates the map once available.
      * This callback is triggered when the map is ready to be used.
@@ -115,5 +199,34 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
+    }
+
+    private boolean isMyServiceRunning(Class<?> serviceClass) {
+        ActivityManager manager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
+            if (serviceClass.getName().equals(service.service.getClassName())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public void startLoggingService() {
+        //begin service
+        Intent startServiceIntent = new Intent(this, TTNMapperService.class);
+        startService(startServiceIntent);
+        bindService(startServiceIntent, mConnection, Context.BIND_AUTO_CREATE);
+    }
+
+    public void stopLoggingService() {
+        //unbind and stop service
+        // Unbind from the service
+        if (mBound) {
+            unbindService(mConnection);
+            mBound = false;
+        }
+
+        Intent startServiceIntent = new Intent(this, TTNMapperService.class);
+        stopService(startServiceIntent);
     }
 }

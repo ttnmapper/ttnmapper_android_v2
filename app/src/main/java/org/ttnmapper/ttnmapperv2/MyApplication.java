@@ -12,14 +12,12 @@ import java.util.ArrayList;
 
 public class MyApplication extends Application {
     private static MyApplication singleton;
-
+    public ArrayList<TTNApplication> ttnApplications = new ArrayList<>();
+    public TTNApplication chosenTtnApplication = null;
     private String ttnApplicationId = "";
     private String ttnDeviceId = "";
     private String ttnAccessKey = "";
     private String ttnBroker = "";
-
-    public ArrayList<TTNApplication> ttnApplications = new ArrayList<>();
-    public TTNApplication chosenTtnApplication = null;
 
     public static MyApplication getInstance(){
         return singleton;
@@ -105,14 +103,7 @@ public class MyApplication extends Application {
     //is configured
     public boolean isConfigured()
     {
-        if(ttnApplicationId.equals("") || ttnDeviceId.equals("") || ttnAccessKey.equals("") || ttnBroker.equals(""))
-        {
-            return false;
-        }
-        else
-        {
-            return true;
-        }
+        return !(ttnApplicationId.equals("") || ttnDeviceId.equals("") || ttnAccessKey.equals("") || ttnBroker.equals(""));
     }
 
     //check logged in

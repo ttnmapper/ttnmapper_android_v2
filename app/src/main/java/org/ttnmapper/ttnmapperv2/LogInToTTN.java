@@ -3,9 +3,8 @@ package org.ttnmapper.ttnmapperv2;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.AsyncTask;
-import android.os.Handler;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
 import android.webkit.WebView;
@@ -16,7 +15,6 @@ import android.widget.TextView;
 
 import com.github.scribejava.core.builder.ServiceBuilder;
 import com.github.scribejava.core.model.OAuth2AccessToken;
-import com.github.scribejava.core.model.OAuthAsyncRequestCallback;
 import com.github.scribejava.core.model.OAuthRequest;
 import com.github.scribejava.core.model.Response;
 import com.github.scribejava.core.model.Verb;
@@ -32,8 +30,6 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Random;
-import java.util.Scanner;
-import java.util.concurrent.ExecutionException;
 
 public class LogInToTTN extends AppCompatActivity {
 
@@ -176,6 +172,48 @@ public class LogInToTTN extends AppCompatActivity {
         button.setVisibility(View.GONE);
 
         loadLoginPage();
+    }
+
+    /**
+     * Return a map of argument->value from a query in a URI
+     *
+     * @param uri The URI
+     */
+    private Map<String, String> getQueryParameter(Uri uri) {
+        if (uri.isOpaque()) {
+            return Collections.emptyMap();
+        }
+
+        String query = uri.getEncodedQuery();
+        if (query == null) {
+            return Collections.emptyMap();
+        }
+
+        Map<String, String> parameters = new LinkedHashMap<>();
+        int start = 0;
+        do {
+            int next = query.indexOf('&', start);
+            int end = (next == -1) ? query.length() : next;
+
+            int separator = query.indexOf('=', start);
+            if (separator > end || separator == -1) {
+                separator = end;
+            }
+
+            String name = query.substring(start, separator);
+            String value;
+            if (separator < end)
+                value = query.substring(separator + 1, end);
+            else
+                value = "";
+
+            parameters.put(Uri.decode(name), Uri.decode(value));
+
+            // Move start to end of name.
+            start = end + 1;
+        } while (start < query.length());
+
+        return Collections.unmodifiableMap(parameters);
     }
 
     private class getTokenWithCode extends AsyncTask<String, String, OAuth2AccessToken> {
@@ -464,47 +502,5 @@ public class LogInToTTN extends AppCompatActivity {
             startActivity(intent);
             finish();
         }
-    }
-
-
-    /**
-     * Return a map of argument->value from a query in a URI
-     * @param uri The URI
-     */
-    private Map<String,String> getQueryParameter(Uri uri) {
-        if (uri.isOpaque()) {
-            return Collections.emptyMap();
-        }
-
-        String query = uri.getEncodedQuery();
-        if (query == null) {
-            return Collections.emptyMap();
-        }
-
-        Map<String,String> parameters = new LinkedHashMap<String,String>();
-        int start = 0;
-        do {
-            int next = query.indexOf('&', start);
-            int end = (next == -1) ? query.length() : next;
-
-            int separator = query.indexOf('=', start);
-            if (separator > end || separator == -1) {
-                separator = end;
-            }
-
-            String name = query.substring(start, separator);
-            String value;
-            if (separator < end)
-                value = query.substring(separator + 1, end);
-            else
-                value = "";
-
-            parameters.put(Uri.decode(name), Uri.decode(value));
-
-            // Move start to end of name.
-            start = end + 1;
-        } while (start < query.length());
-
-        return Collections.unmodifiableMap(parameters);
     }
 }

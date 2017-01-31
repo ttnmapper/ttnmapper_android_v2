@@ -30,6 +30,10 @@
             android:name="com.google.android.geo.API_KEY"
             android:value="@string/google_maps_key" />
 
+        <service
+            android:name=".TTNMapperService"
+            android:exported="false" />
+
         <activity
             android:name=".MapsActivity"
             android:label="@string/title_activity_maps">
@@ -43,7 +47,7 @@
         <activity android:name=".LinkDeviceManually" />
         <activity android:name=".LogInToTTN" />
         <activity android:name=".ApplicationList" />
-        <activity android:name=".DevicesList"></activity>
+        <activity android:name=".DevicesList" />
     </application>
 
 </manifest>
