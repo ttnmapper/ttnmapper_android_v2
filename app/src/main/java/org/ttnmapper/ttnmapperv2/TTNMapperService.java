@@ -6,7 +6,9 @@ import android.app.Service;
 import android.content.Intent;
 import android.os.Binder;
 import android.os.Build;
+import android.os.Handler;
 import android.os.IBinder;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
 /**
@@ -17,8 +19,8 @@ public class TTNMapperService extends Service {
 
     private static final int ONGOING_NOTIFICATION_ID = 1;
     private static String TAG = "LoggingService";
-    // Binder given to clients
     private final IBinder mBinder = new LocalBinder();
+    private int startId;
 
     @Override
     public IBinder onBind(Intent intent) {
@@ -42,6 +44,8 @@ public class TTNMapperService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.d(TAG, "onStart");
 
+        this.startId = startId;
+
         Intent notificationIntent = new Intent(this, MapsActivity.class);
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
 
@@ -61,7 +65,33 @@ public class TTNMapperService extends Service {
 
         startForeground(ONGOING_NOTIFICATION_ID, notification);
 
+        runAfterTime(10000);
+
         return START_STICKY;
+    }
+
+    void runAfterTime(int milliseconds) {
+        Handler handler = new Handler();
+
+        final Runnable r = new Runnable() {
+            public void run() {
+                Log.d(TAG, "Running delayed method");
+//                stopForeground(true);
+                stopSelf();
+                sendMessage("selfstop");
+//                MyApplication mApplication = (MyApplication)getApplicationContext();
+//                mApplication.aFunctionToCall();
+            }
+        };
+
+        handler.postDelayed(r, milliseconds);
+    }
+
+    private void sendMessage(String message) {
+        Intent intent = new Intent("ttn-mapper-service-event");
+        // add data
+        intent.putExtra("message", message);
+        LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
     }
 
     /**

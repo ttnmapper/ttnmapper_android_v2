@@ -3,6 +3,7 @@ package org.ttnmapper.ttnmapperv2;
 import android.app.Application;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
+import android.util.Log;
 
 import java.util.ArrayList;
 
@@ -11,6 +12,7 @@ import java.util.ArrayList;
  */
 
 public class MyApplication extends Application {
+    private static final String TAG = "MyApplication";
     private static MyApplication singleton;
     public ArrayList<TTNApplication> ttnApplications = new ArrayList<>();
     public TTNApplication chosenTtnApplication = null;
@@ -104,6 +106,10 @@ public class MyApplication extends Application {
     public boolean isConfigured()
     {
         return !(ttnApplicationId.equals("") || ttnDeviceId.equals("") || ttnAccessKey.equals("") || ttnBroker.equals(""));
+    }
+
+    public void aFunctionToCall() {
+        Log.d(TAG, "Function inside main app called");
     }
 
     //check logged in

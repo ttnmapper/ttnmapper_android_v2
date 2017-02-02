@@ -1,13 +1,16 @@
 package org.ttnmapper.ttnmapperv2;
 
 import android.app.ActivityManager;
+import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -49,6 +52,38 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         public void onServiceDisconnected(ComponentName arg0) {
             Log.d(TAG, "onServiceDisconnected");
             mBound = false;
+        }
+    };
+    // handler for received Intents for the "my-event" event
+    private BroadcastReceiver mMessageReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            // Extract data included in the Intent
+            String message = intent.getStringExtra("message");
+            String payloadData = intent.getStringExtra("payload");
+            Log.d(TAG, "Got message: " + message);
+
+            switch (message) {
+                case "rxmessage":
+                    Log.d(TAG, "RX packet: " + payloadData);
+                    break;
+                case "selfstop":
+                    Log.d(TAG, "Received selfstop from service");
+                    stopLoggingService();
+                    if (payloadData == null) {
+                        Toast.makeText(getApplicationContext(), "Logging stopped unexpectedly", Toast.LENGTH_LONG).show();
+                    } else {
+                        Toast.makeText(getApplicationContext(), "Logging stopped - " + payloadData, Toast.LENGTH_LONG).show();
+                    }
+                    ToggleButton toggleButton = (ToggleButton) findViewById(R.id.toggleButtonStartLogging);
+                    toggleButton.setChecked(false);
+                    break;
+                case "test":
+                    Log.d(TAG, "Test message received");
+                    break;
+                default:
+                    Log.d(TAG, "Unknown message received");
+            }
         }
     };
 
@@ -116,6 +151,17 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         if (isMyServiceRunning(TTNMapperService.class)) {
             restartLogging();
         }
+
+        // Register mMessageReceiver to receive messages.
+        LocalBroadcastManager.getInstance(this).registerReceiver(mMessageReceiver,
+                new IntentFilter("ttn-mapper-service-event"));
+    }
+
+    @Override
+    protected void onPause() {
+        // Unregister since the activity is not visible
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(mMessageReceiver);
+        super.onPause();
     }
 
     @Override
