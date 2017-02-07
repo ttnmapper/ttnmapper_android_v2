@@ -8,7 +8,8 @@
          location permissions for the 'MyLocation' functionality. 
     -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 
     <!-- permissions for mqtt -->
     <uses-permission android:name="android.permission.WAKE_LOCK" />
@@ -42,19 +43,33 @@
 
         <activity
             android:name=".MapsActivity"
-            android:label="@string/title_activity_maps">
+            android:label="TTN Mapper" />
+        <activity
+            android:name=".LinkDevice"
+            android:label="Link Device" />
+        <activity
+            android:name=".LinkDeviceManually"
+            android:label="Manually Link Device" />
+        <activity
+            android:name=".LogInToTTN"
+            android:label="Log in with TTN" />
+        <activity
+            android:name=".ApplicationList"
+            android:label="Choose an application" />
+        <activity
+            android:name=".DevicesList"
+            android:label="Choose a device" />
+        <activity
+            android:name=".SettingsActivity"
+            android:label="Settings" />
+        <activity
+            android:name=".CheckPermissions"
+            android:label="Permissions">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".LinkDevice" />
-        <activity android:name=".LinkDeviceManually" />
-        <activity android:name=".LogInToTTN" />
-        <activity android:name=".ApplicationList" />
-        <activity android:name=".DevicesList" />
-        <activity android:name=".SettingsActivity"></activity>
     </application>
 
 </manifest>

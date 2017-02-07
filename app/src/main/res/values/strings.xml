@@ -3,4 +3,13 @@
     <string name="title_activity_maps">Map</string>
     <string name="action_exit">Stop logging</string>
     <string name="service_connected">TTN Mapper Logging</string>
+
+    <string name="permission_location_rationale">This app needs to know your location to geotag TTN packets.</string>
+    <string name="ok">OK</string>
+    <string name="permissions_not_location">Permissions not granted.</string>
+    <string name="permission_available_location">Location Permission has been granted. This app can now log packets.</string>
+    <string name="permission_file_rationale">We need to be able to write to your phone\'s storage to log the packets to a file.</string>
+    <string name="permission_available_file">Permission to write a file granted.</string>
+    <string name="permissions_not_file">No permission to write a file</string>
+    <string name="api_url">https://ttnmapper.org/appapi/</string>
 </resources>

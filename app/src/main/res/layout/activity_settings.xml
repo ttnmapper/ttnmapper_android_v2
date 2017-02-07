@@ -21,6 +21,19 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
+            <TextView
+                android:id="@+id/textView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Choose measurement type"
+                android:textAppearance="?android:attr/textAppearanceLarge" />
+
+            <TextView
+                android:id="@+id/textView2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Are you contributing to the ttnmapper.org global map of TTN coverage, or are you doing an experiment of which the data shoud not be shown on the global map, but on a dedicated separate map?" />
+
             <RadioGroup
                 android:id="@+id/radioGroupUpload"
                 android:layout_width="match_parent"
@@ -30,27 +43,55 @@
                     android:id="@+id/radioButtonUploadGlobal"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Upload to global map" />
+                    android:text="Upload and contibute to global map" />
 
                 <RadioButton
                     android:id="@+id/radioButtonNoUpload"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Do not upload, display locally only" />
+                    android:text="Do not upload to ttnmapper.org, display locally only" />
 
                 <RadioButton
                     android:id="@+id/radioButtonUploadExperiment"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Upload to an experiment" />
+                    android:text="Upload as experiment data" />
 
             </RadioGroup>
+
+
+            <TextView
+                android:id="@+id/textView3"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Give your experiment a unique name" />
 
             <EditText
                 android:id="@+id/editTextExperimentName"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="experiment name" />
+                android:hint="experiment name"
+                android:paddingBottom="15dp" />
+
+            <TextView
+                android:id="@+id/textView6"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Save to file"
+                android:textAppearance="?android:attr/textAppearanceLarge" />
+
+            <CheckBox
+                android:id="@+id/checkBoxSaveFile"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:checked="false"
+                android:text="Save measurement data to a local file" />
+
+            <EditText
+                android:id="@+id/editTextFilename"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="File name" />
 
 
         </LinearLayout>

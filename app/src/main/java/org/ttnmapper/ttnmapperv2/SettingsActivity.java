@@ -4,6 +4,7 @@ import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
+import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
@@ -22,10 +23,18 @@ public class SettingsActivity extends AppCompatActivity {
         RadioButton rbExperiment = (RadioButton) findViewById(R.id.radioButtonUploadExperiment);
         RadioButton rbNoUpload = (RadioButton) findViewById(R.id.radioButtonNoUpload);
         EditText etExperimentName = (EditText) findViewById(R.id.editTextExperimentName);
+        EditText etSaveToFile = (EditText) findViewById(R.id.editTextFilename);
+        CheckBox cbSaveToFile = (CheckBox) findViewById(R.id.checkBoxSaveFile);
 
+        // save to file
+        etSaveToFile.setText(mApplication.getFileName());
+        etSaveToFile.setEnabled(false);
+        cbSaveToFile.setChecked(mApplication.isSaveToFile());
+
+
+        // upload type
         etExperimentName.setText(mApplication.getExperimentName());
 
-        //first test experiment
         if (mApplication.isExperiment() && mApplication.isShouldUpload()) {
             rbExperiment.setChecked(true);
             etExperimentName.setEnabled(true);
@@ -88,6 +97,10 @@ public class SettingsActivity extends AppCompatActivity {
             mApplication.setShouldUpload(false);
             mApplication.setExperiment(false);
         }
+
+        //save to file
+        CheckBox cbSaveToFile = (CheckBox) findViewById(R.id.checkBoxSaveFile);
+        mApplication.setSaveToFile(cbSaveToFile.isChecked());
 
         finish();
     }

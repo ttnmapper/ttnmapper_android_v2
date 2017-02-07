@@ -9,6 +9,11 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -27,6 +32,8 @@ public class MyApplication extends Application {
     public ArrayList<Measurement> measurements = new ArrayList<>();
     private boolean shouldUpload;
     private boolean isExperiment;
+    private boolean saveToFile;
+    private String fileName;
     private String experimentName;
     private String ttnApplicationId = "";
     private String ttnDeviceId = "";
@@ -36,6 +43,8 @@ public class MyApplication extends Application {
     private double latestLon = 0;
     private double latestAlt = 0;
     private double latestAcc = 0;
+
+    private String latestProvider = "none";
 
     public static MyApplication getInstance(){
         return singleton;
@@ -53,12 +62,14 @@ public class MyApplication extends Application {
 
         shouldUpload = myPrefs.getBoolean("shouldUpload", true);
         isExperiment = myPrefs.getBoolean("isExperiment", false);
+        saveToFile = myPrefs.getBoolean("saveToFile", true);
 
         TimeZone tz = TimeZone.getTimeZone("UTC");
-        DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm'Z'"); // Quoted "Z" to indicate UTC, no timezone offset
+        DateFormat df = new SimpleDateFormat("yyyyMMddHHmm"); // Quoted "Z" to indicate UTC, no timezone offset
         df.setTimeZone(tz);
         String nowAsISO = df.format(new Date());
         experimentName = myPrefs.getString("experimentName", "experiment_" + nowAsISO);
+        fileName = "ttnmapper-" + nowAsISO + ".log";
     }
 
     @Override
@@ -195,6 +206,34 @@ public class MyApplication extends Application {
     }
 
 
+    public String getFileName() {
+        return fileName;
+    }
+
+    public void setFileName(String fileName) {
+        this.fileName = fileName;
+    }
+
+    public boolean isSaveToFile() {
+        return saveToFile;
+    }
+
+    public void setSaveToFile(boolean saveToFile) {
+        this.saveToFile = saveToFile;
+        SharedPreferences myPrefs = this.getSharedPreferences("myPrefs", MODE_PRIVATE);
+        SharedPreferences.Editor prefsEditor = myPrefs.edit();
+        prefsEditor.putBoolean("saveToFile", saveToFile);
+        prefsEditor.apply();
+    }
+
+
+    public String getLatestProvider() {
+        return latestProvider;
+    }
+
+    public void setLatestProvider(String latestProvider) {
+        this.latestProvider = latestProvider;
+    }
 
 
     //is configured
@@ -259,12 +298,16 @@ public class MyApplication extends Application {
                 measurement.setAppeui(packetData.getString("app_id"));
                 measurement.setAlt(latestAlt);
                 measurement.setAccuracy(latestAcc);
+                measurement.setProvider(latestProvider);
                 measurement.setMqtt_topic(topic);
 
                 measurements.add(measurement);
 
                 if (shouldUpload) {
                     uploadMeasurement(measurement);
+                }
+                if (saveToFile) {
+                    saveMeasurementToFIle(measurement);
                 }
             }
         } catch (JSONException e) {
@@ -273,7 +316,37 @@ public class MyApplication extends Application {
         }
     }
 
+    private void saveMeasurementToFIle(Measurement measurement) {
+        Log.d(TAG, "Saving to file");
+
+        // Find the root of the external storage.
+        // See http://developer.android.com/guide/topics/data/data-storage.html#filesExternal
+        File root = android.os.Environment.getExternalStorageDirectory();
+
+        // See http://stackoverflow.com/questions/3551821/android-write-to-sd-card-folder
+        File dir = new File(root.getAbsolutePath() + "/ttnmapper_logs");
+        dir.mkdirs();
+        File file = new File(dir, fileName);
+
+        try {
+            final FileOutputStream f = new FileOutputStream(file, true);
+            final PrintWriter pw = new PrintWriter(f);
+            pw.println(measurement.getJSON().toString().trim());
+            pw.flush();
+            pw.close();
+            f.close();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+            Log.i(TAG, "******* File not found. Did you" +
+                    " add a WRITE_EXTERNAL_STORAGE permission to the   manifest?");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     private void uploadMeasurement(Measurement measurement) {
         Log.d(TAG, "Uploading: " + measurement.getJSON().toString());
     }
+
+
 }
