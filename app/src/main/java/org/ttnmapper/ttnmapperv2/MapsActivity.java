@@ -196,8 +196,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 startActivity(intent);
                 return true;
             case R.id.settings:
-//                Intent intent = new Intent(this, about.class);
-//                startActivity(intent);
+                Intent intentSettings = new Intent(this, SettingsActivity.class);
+                startActivity(intentSettings);
                 return true;
             default:
                 return super.onOptionsItemSelected(item);

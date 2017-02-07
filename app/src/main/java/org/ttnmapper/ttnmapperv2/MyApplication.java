@@ -25,9 +25,9 @@ public class MyApplication extends Application {
     public ArrayList<TTNApplication> ttnApplications = new ArrayList<>();
     public TTNApplication chosenTtnApplication = null;
     public ArrayList<Measurement> measurements = new ArrayList<>();
-    boolean shouldUpload;
-    boolean isExperiment;
-    String experimentName;
+    private boolean shouldUpload;
+    private boolean isExperiment;
+    private String experimentName;
     private String ttnApplicationId = "";
     private String ttnDeviceId = "";
     private String ttnAccessKey = "";

@@ -54,6 +54,7 @@
         <activity android:name=".LogInToTTN" />
         <activity android:name=".ApplicationList" />
         <activity android:name=".DevicesList" />
+        <activity android:name=".SettingsActivity"></activity>
     </application>
 
 </manifest>
