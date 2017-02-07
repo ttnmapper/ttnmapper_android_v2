@@ -61,11 +61,13 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             // Extract data included in the Intent
             String message = intent.getStringExtra("message");
             String payloadData = intent.getStringExtra("payload");
+            String topic = intent.getStringExtra("topic");
             Log.d(TAG, "Got message: " + message);
 
             switch (message) {
                 case "rxmessage":
-                    Log.d(TAG, "RX packet: " + payloadData);
+                    //TODO: refresh view with new data from application class
+                    Log.d(TAG, "Will refresh the map now");
                     break;
                 case "selfstop":
                     Log.d(TAG, "Received selfstop from service");
@@ -77,6 +79,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     }
                     ToggleButton toggleButton = (ToggleButton) findViewById(R.id.toggleButtonStartLogging);
                     toggleButton.setChecked(false);
+                    break;
+                case "notification":
+                    Toast.makeText(getApplicationContext(), payloadData, Toast.LENGTH_LONG).show();
                     break;
                 case "test":
                     Log.d(TAG, "Test message received");
@@ -155,6 +160,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         // Register mMessageReceiver to receive messages.
         LocalBroadcastManager.getInstance(this).registerReceiver(mMessageReceiver,
                 new IntentFilter("ttn-mapper-service-event"));
+
+        //TODO: refresh view with new data from application class
     }
 
     @Override

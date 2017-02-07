@@ -1,7 +1,7 @@
 package org.ttnmapper.ttnmapperv2;
 
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
@@ -37,7 +37,7 @@ public class DevicesList extends AppCompatActivity implements AdapterView.OnItem
         MyApplication mApplication = (MyApplication)getApplicationContext();
 
         mApplication.setTtnDeviceId(selectedDevice);
-
+        mApplication.ttnApplications.clear(); //free some memory
         finish();
     }
 }
