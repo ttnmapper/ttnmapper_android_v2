@@ -32,6 +32,9 @@ import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 /**
  * Created by jpmeijers on 30-1-17.
  */
@@ -127,7 +130,13 @@ public class TTNMapperService extends Service implements GoogleApiClient.Connect
         mApplication.setLatestAlt(location.getAltitude());
         mApplication.setLatestAcc(location.getAccuracy());
         mApplication.setLatestProvider(location.getProvider());
+        Log.d(TAG, "Provider=" + location.getProvider());
+        Log.d(TAG, "Accuracy=" + location.getAccuracy());
 
+        //notify activity for auto center and zoom
+        Intent intent = new Intent("ttn-mapper-service-event");
+        intent.putExtra("message", "locationupdate");
+        LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
     }
 
     private void sendNotification(String message) {
@@ -175,12 +184,26 @@ public class TTNMapperService extends Service implements GoogleApiClient.Connect
 //                    Log.d(TAG, "Payload: "+message.toString());
 
                     MyApplication mApplication = (MyApplication) getApplicationContext();
-                    mApplication.logPacket(topic, message.toString());
 
-                    // after logging the packet, let the activity know to refresh
-                    Intent intent = new Intent("ttn-mapper-service-event");
-                    intent.putExtra("message", "rxmessage");
-                    LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(intent);
+                    if (mApplication.getLatestAcc() > 10) {
+                        Log.d(TAG, "Packet received, GPS not accurate enough");
+                        sendNotification("Packet received, but location of phone is not accurate enough. Try going outside.\nCurrent accuracy: " +
+                                (Math.round(mApplication.getLatestAcc() * 100) / 100) + " metres\n" +
+                                (new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date())));
+                    } else if (mApplication.getLatestLat() != 0 && mApplication.getLatestLon() != 0) {
+                        Log.d(TAG, "Packet received, logging");
+                        mApplication.logPacket(topic, message.toString());
+
+                        // after logging the packet, let the activity know to refresh
+                        Intent intent = new Intent("ttn-mapper-service-event");
+                        intent.putExtra("message", "rxmessage");
+                        LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(intent);
+
+                        sendNotification("Last packet received at:\n" + (new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date())));
+                    } else {
+                        Log.d(TAG, "Packet received, GPS location unknown");
+                        sendNotification("Packet received, but location of phone is still unknown.");
+                    }
                 }
 
                 @Override

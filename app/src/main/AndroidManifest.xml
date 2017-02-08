@@ -43,7 +43,12 @@
 
         <activity
             android:name=".MapsActivity"
-            android:label="TTN Mapper" />
+            android:label="TTN Mapper">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
         <activity
             android:name=".LinkDevice"
             android:label="Link Device" />
@@ -64,12 +69,8 @@
             android:label="Settings" />
         <activity
             android:name=".CheckPermissions"
-            android:label="Permissions">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
+            android:label="Permissions" />
+
     </application>
 
 </manifest>

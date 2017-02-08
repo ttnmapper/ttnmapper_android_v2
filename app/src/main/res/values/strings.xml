@@ -11,5 +11,6 @@
     <string name="permission_file_rationale">We need to be able to write to your phone\'s storage to log the packets to a file.</string>
     <string name="permission_available_file">Permission to write a file granted.</string>
     <string name="permissions_not_file">No permission to write a file</string>
-    <string name="api_url">https://ttnmapper.org/appapi/</string>
+    <string name="ttnmapper_api_upload_packet">https://ttnmapper.org/appapi/upload.php</string>
+    <string name="ttnmapper_api_upload_gateway">https://ttnmapper.org/appapi/update_gateway.php</string>
 </resources>

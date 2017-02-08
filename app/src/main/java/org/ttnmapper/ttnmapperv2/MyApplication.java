@@ -2,8 +2,13 @@ package org.ttnmapper.ttnmapperv2;
 
 import android.app.Application;
 import android.content.SharedPreferences;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.content.res.Configuration;
+import android.support.v4.app.ActivityCompat;
 import android.util.Log;
+
+import com.google.android.gms.iid.InstanceID;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -19,6 +24,14 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.TimeZone;
+
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
 
 /**
  * Created by jpmeijers on 28-1-17.
@@ -43,12 +56,40 @@ public class MyApplication extends Application {
     private double latestLon = 0;
     private double latestAlt = 0;
     private double latestAcc = 0;
-
+    private boolean lordriveMode = true;
+    private boolean autoCenter = true;
+    private boolean autoZoom = true;
     private String latestProvider = "none";
+    private OkHttpClient httpClient = new OkHttpClient();
 
     public static MyApplication getInstance(){
         return singleton;
     }
+
+    public boolean isLordriveMode() {
+        return lordriveMode;
+    }
+
+    public void setLordriveMode(boolean lordriveMode) {
+        this.lordriveMode = lordriveMode;
+    }
+
+    public boolean isAutoCenter() {
+        return autoCenter;
+    }
+
+    public void setAutoCenter(boolean autoCenter) {
+        this.autoCenter = autoCenter;
+    }
+
+    public boolean isAutoZoom() {
+        return autoZoom;
+    }
+
+    public void setAutoZoom(boolean autoZoom) {
+        this.autoZoom = autoZoom;
+    }
+
     @Override
     public void onCreate() {
         super.onCreate();
@@ -86,8 +127,6 @@ public class MyApplication extends Application {
     public void onTerminate() {
         super.onTerminate();
     }
-
-
 
     public String getTtnApplicationId() {
         return ttnApplicationId;
@@ -205,7 +244,6 @@ public class MyApplication extends Application {
         this.latestLon = latestLon;
     }
 
-
     public String getFileName() {
         return fileName;
     }
@@ -226,7 +264,6 @@ public class MyApplication extends Application {
         prefsEditor.apply();
     }
 
-
     public String getLatestProvider() {
         return latestProvider;
     }
@@ -235,15 +272,32 @@ public class MyApplication extends Application {
         this.latestProvider = latestProvider;
     }
 
-
     //is configured
     public boolean isConfigured()
     {
         return !(ttnApplicationId.equals("") || ttnDeviceId.equals("") || ttnAccessKey.equals("") || ttnBroker.equals(""));
     }
 
+    //check if we have all the neccesary permissions
+    public boolean checkPermissions() {
+        if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            return false;
+        } else if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            return false;
+        } else if (saveToFile && ActivityCompat.checkSelfPermission(this, android.Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+            return false;
+        } else {
+            return true;
+        }
+    }
+
     public void logPacket(String topic, String payload) {
         Log.d(TAG, "Logging rx packet");
+
+        if (latestLat == 0 || latestLon == 0) {
+            //we do not know our location yet
+            return;
+        }
 
         /*
         {
@@ -282,6 +336,14 @@ public class MyApplication extends Application {
             JSONObject metadata = packetData.getJSONObject("metadata");
             JSONArray gateways = metadata.getJSONArray("gateways");
 
+            double maxRssi = 0;
+            for (int i = 0; i < gateways.length(); i++) {
+                JSONObject gateway = gateways.getJSONObject(i);
+                if (maxRssi == 0 || maxRssi < gateway.getDouble("rssi")) {
+                    maxRssi = gateway.getDouble("rssi");
+                }
+            }
+
             for (int i = 0; i < gateways.length(); i++) {
                 JSONObject gateway = gateways.getJSONObject(i);
 
@@ -301,10 +363,16 @@ public class MyApplication extends Application {
                 measurement.setProvider(latestProvider);
                 measurement.setMqtt_topic(topic);
 
+                //save details for plotting on map
+                measurement.setMaxRssi(maxRssi);
+                measurement.setGwlat(gateway.getDouble("latitude"));
+                measurement.setGwlon(gateway.getDouble("longitude"));
+
                 measurements.add(measurement);
 
                 if (shouldUpload) {
                     uploadMeasurement(measurement);
+                    uploadGateway(gateway);
                 }
                 if (saveToFile) {
                     saveMeasurementToFIle(measurement);
@@ -344,8 +412,142 @@ public class MyApplication extends Application {
         }
     }
 
+    Call postToServer(String url, String json, Callback callback) throws IOException {
+        RequestBody body = RequestBody.create(MediaType.parse("application/json; charset=utf-8"), json);
+        Request request = new Request.Builder()
+                .url(url)
+                .post(body)
+                .build();
+        Call call = httpClient.newCall(request);
+        call.enqueue(callback);
+        return call;
+    }
+
     private void uploadMeasurement(Measurement measurement) {
         Log.d(TAG, "Uploading: " + measurement.getJSON().toString());
+
+        JSONObject toPost = measurement.getJSON();
+
+        //set the app instance ID (https://developers.google.com/instance-id/)
+        try {
+            toPost.put("iid", InstanceID.getInstance(getApplicationContext()).getId());
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        //add version name of this app
+        try {
+            final PackageInfo pInfo = getPackageManager().getPackageInfo(getPackageName(), 0);
+            final String version = pInfo.versionName;
+            int verCode = pInfo.versionCode;
+            try {
+                toPost.put("user_agent", "Android" + android.os.Build.VERSION.RELEASE + " App" + verCode + ":" + version);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        } catch (PackageManager.NameNotFoundException e) {
+            e.printStackTrace();
+        }
+
+        //the only difference between a normal upload and an experiment is the experiment name parameter
+        if (isExperiment) {
+            try {
+                toPost.put("experiment", experimentName);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
+
+        //post packet
+        try {
+            postToServer(getString(R.string.ttnmapper_api_upload_packet), toPost.toString(), new Callback() {
+                @Override
+                public void onFailure(Call call, IOException e) {
+                    Log.d(TAG, "Error uploading");
+                    e.printStackTrace();
+                }
+
+                @Override
+                public void onResponse(Call call, Response response) throws IOException {
+                    if (response.isSuccessful()) {
+                        final String returnedString = response.body().string();
+                        System.out.println("HTTP response: " + returnedString);
+                        if (!returnedString.contains("New records created successfully")) {
+                            // Request not successful
+                            Log.d(TAG, "server error: " + returnedString);
+                        }
+                        // Do what you want to do with the response.
+                    } else {
+                        // Request not successful
+                        Log.d(TAG, "server error");
+                    }
+                }
+            });
+        } catch (IOException e) {
+            Log.d(TAG, "HTTP call IO exception");
+            e.printStackTrace();
+        }
+    }
+
+    private void uploadGateway(JSONObject toPost) {
+        //set the app instance ID (https://developers.google.com/instance-id/)
+        try {
+            toPost.put("iid", InstanceID.getInstance(getApplicationContext()).getId());
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        //add version name of this app
+        try {
+            final PackageInfo pInfo = getPackageManager().getPackageInfo(getPackageName(), 0);
+            final String version = pInfo.versionName;
+            int verCode = pInfo.versionCode;
+            try {
+                toPost.put("user_agent", "Android" + android.os.Build.VERSION.RELEASE + " App" + verCode + ":" + version);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        } catch (PackageManager.NameNotFoundException e) {
+            e.printStackTrace();
+        }
+
+        //the only difference between a normal upload and an experiment is the experiment name parameter
+        if (isExperiment) {
+            try {
+                toPost.put("experiment", experimentName);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
+        //post packet
+        try {
+            postToServer(getString(R.string.ttnmapper_api_upload_gateway), toPost.toString(), new Callback() {
+                @Override
+                public void onFailure(Call call, IOException e) {
+                    Log.d(TAG, "Error uploading");
+                    e.printStackTrace();
+                }
+
+                @Override
+                public void onResponse(Call call, Response response) throws IOException {
+                    if (response.isSuccessful()) {
+                        final String returnedString = response.body().string();
+                        System.out.println("HTTP response: " + returnedString);
+                        if (!returnedString.contains("New records created successfully")) {
+                            // Request not successful
+                            Log.d(TAG, "server error: " + returnedString);
+                        }
+                        // Do what you want to do with the response.
+                    } else {
+                        // Request not successful
+                        Log.d(TAG, "server error");
+                    }
+                }
+            });
+        } catch (IOException e) {
+            Log.d(TAG, "HTTP call IO exception");
+            e.printStackTrace();
+        }
     }
 
 

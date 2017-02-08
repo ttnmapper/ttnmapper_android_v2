@@ -8,6 +8,10 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Paint;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.support.v4.content.LocalBroadcastManager;
@@ -17,14 +21,23 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.WindowManager;
 import android.widget.CompoundButton;
 import android.widget.TextView;
-import android.widget.Toast;
 import android.widget.ToggleButton;
 
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.GoogleApiAvailability;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptor;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.PolylineOptions;
+
+import java.util.ArrayList;
 
 public class MapsActivity extends AppCompatActivity implements OnMapReadyCallback, CompoundButton.OnCheckedChangeListener {
 
@@ -32,6 +45,21 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     //service handles
     TTNMapperService mService;
     boolean mBound = false;
+    BitmapDescriptor circleBlack = null;
+    BitmapDescriptor circleBlue = null;
+    BitmapDescriptor circleCyan = null;
+    BitmapDescriptor circleGreen = null;
+    BitmapDescriptor circleYellow = null;
+    BitmapDescriptor circleOrange = null;
+    BitmapDescriptor circleRed = null;
+    Bitmap bmBlack;
+    Bitmap bmBlue;
+    Bitmap bmCyan;
+    Bitmap bmGreen;
+    Bitmap bmYellow;
+    Bitmap bmOrange;
+    Bitmap bmRed;
+    ArrayList<String> gatewaysWithMarkers = new ArrayList<>();
     private GoogleMap mMap;
     /**
      * Defines callbacks for service binding, passed to bindService()
@@ -66,22 +94,24 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
             switch (message) {
                 case "rxmessage":
-                    //TODO: refresh view with new data from application class
-                    Log.d(TAG, "Will refresh the map now");
+                    addLastMeasurementToMap();
+                    break;
+                case "locationupdate":
+                    //TODO: center and zoom map
                     break;
                 case "selfstop":
-                    Log.d(TAG, "Received selfstop from service");
+                    Log.d(TAG, "Received selfstop from service.");
                     stopLoggingService();
                     if (payloadData == null) {
-                        Toast.makeText(getApplicationContext(), "Logging stopped unexpectedly", Toast.LENGTH_LONG).show();
+                        setStatusMessage("Logging stopped unexpectedly");
                     } else {
-                        Toast.makeText(getApplicationContext(), "Logging stopped - " + payloadData, Toast.LENGTH_LONG).show();
+                        setStatusMessage("Logging stopped - " + payloadData);
                     }
                     ToggleButton toggleButton = (ToggleButton) findViewById(R.id.toggleButtonStartLogging);
                     toggleButton.setChecked(false);
                     break;
                 case "notification":
-                    Toast.makeText(getApplicationContext(), payloadData, Toast.LENGTH_LONG).show();
+                    setStatusMessage(payloadData);
                     break;
                 case "test":
                     Log.d(TAG, "Test message received");
@@ -101,6 +131,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
 
+        //logging button
         ToggleButton toggleButton = (ToggleButton) findViewById(R.id.toggleButtonStartLogging);
         toggleButton.setOnCheckedChangeListener(this);
         if (isMyServiceRunning(TTNMapperService.class)) {
@@ -109,9 +140,47 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             bindService(startServiceIntent, mConnection, Context.BIND_AUTO_CREATE);
         }
 
+        //screen on button
+        ToggleButton screenToggle = (ToggleButton) findViewById(R.id.toggleButtonScreenOn);
+        screenToggle.setOnCheckedChangeListener(this);
+
         MyApplication mApplication = (MyApplication)getApplicationContext();
-        if(!mApplication.isConfigured())
+
+        /*
+         * First check if google play services are available for location and maps
+         * Then check if a device has been configured
+         * Lastly check if we have permission to do what we want. - maybe we need to do this earlier for location, but the location onChange will just never fire.
+         */
+        if (!isPlayServicesAvailable())
         {
+            setStatusMessage("Google Play services needed.");
+            AlertDialog.Builder builder1 = new AlertDialog.Builder(MapsActivity.this);
+            builder1.setMessage("This app requires Google Play Services. Please update or install Google Play services.");
+            builder1.setCancelable(true);
+
+            builder1.setPositiveButton(
+                    "Install",
+                    new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int id) {
+                            dialog.cancel();
+                            Intent intent = new Intent(Intent.ACTION_VIEW);
+                            intent.setData(Uri.parse("market://details?id=com.google.android.gms"));
+                            startActivity(intent);
+                            finish();
+                        }
+                    });
+
+            builder1.setNegativeButton(
+                    "Not now",
+                    new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int id) {
+                            dialog.cancel();
+                        }
+                    });
+
+            AlertDialog alert11 = builder1.create();
+            alert11.show();
+        } else if (!mApplication.isConfigured()) {
             AlertDialog.Builder builder1 = new AlertDialog.Builder(MapsActivity.this);
             builder1.setMessage("To map coverage you need to link a device to this app. Click on Link device to log into your The Things Network account and choose a device.\n\nThis app subscribes to the linked device to receive packets from it. When a packet is received it is assumed that the linked device is relatively close to this phone. The phone's GPS location and metadata of the packet is used to draw a coverage map.\n\nYou can link a device at a later stage, or change the linked device from the options menu.");
             builder1.setCancelable(true);
@@ -143,18 +212,18 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     protected void onResume() {
         super.onResume();
         Log.d(TAG, "onResume");
-        TextView tv = (TextView) findViewById(R.id.textViewStatus);
         MyApplication mApplication = (MyApplication)getApplicationContext();
         if(!mApplication.isConfigured()){
-            tv.setText("You have to link a device before mapping coverage.");
+            setStatusMessage("You have to link a device before mapping coverage.");
         }
         else
         {
-            tv.setText("Ready to start logging.");
+            setStatusMessage("Ready to start logging.");
         }
 
         if (isMyServiceRunning(TTNMapperService.class)) {
             restartLogging();
+            setStatusMessage("Logging in progress.");
         }
 
         // Register mMessageReceiver to receive messages.
@@ -207,18 +276,30 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     //toggle button to start/stop logging
     @Override
     public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-        if (isChecked) {
-            MyApplication mApplication = (MyApplication) getApplicationContext();
-            if (mApplication.isConfigured()) {
-                Log.d(TAG, "Starting logging");
-                startLoggingService();
+        if (buttonView.getId() == R.id.toggleButtonStartLogging) {
+            if (isChecked) {
+                MyApplication mApplication = (MyApplication) getApplicationContext();
+                if (mApplication.isConfigured()) {
+                    Log.d(TAG, "Starting logging");
+                    setStatusMessage("Logging started.");
+                    startLoggingService();
+                } else {
+                    setStatusMessage("You need to link a device before you can start logging!");
+                    buttonView.setChecked(false);
+                }
             } else {
-                Toast.makeText(this, "You need to link a device before you can start logging!", Toast.LENGTH_LONG).show();
-                buttonView.setChecked(false);
+                Log.d(TAG, "Stopping logging");
+                stopLoggingService();
+                setStatusMessage("Logging stopped.");
             }
-        } else {
-            Log.d(TAG, "Stopping logging");
-            stopLoggingService();
+        } else if (buttonView.getId() == R.id.toggleButtonScreenOn) {
+            if (isChecked) {
+                Log.d(TAG, "Screen on flag set");
+                getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+            } else {
+                Log.d(TAG, "Screen on flag cleared");
+                getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+            }
         }
 
     }
@@ -232,9 +313,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         if (mApplication.isConfigured()) {
             Log.d(TAG, "Starting logging");
             startLoggingService();
-            Toast.makeText(this, "Logging restarted", Toast.LENGTH_LONG).show();
+            setStatusMessage("Logging restarted.");
         } else {
-            Toast.makeText(this, "You need to link a device before you can start logging!", Toast.LENGTH_LONG).show();
+            setStatusMessage("You need to link a device before you can start logging!");
             ToggleButton toggleButton = (ToggleButton) findViewById(R.id.toggleButtonStartLogging);
             toggleButton.setChecked(false);
         }
@@ -265,10 +346,42 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     public void startLoggingService() {
-        //begin service
-        Intent startServiceIntent = new Intent(this, TTNMapperService.class);
-        startService(startServiceIntent);
-        bindService(startServiceIntent, mConnection, Context.BIND_AUTO_CREATE);
+        //check for permissions
+        MyApplication mApplication = (MyApplication) getApplicationContext();
+        if (!mApplication.checkPermissions()) {
+            ToggleButton toggleButton = (ToggleButton) findViewById(R.id.toggleButtonStartLogging);
+            toggleButton.setChecked(false);
+
+            AlertDialog.Builder builder1 = new AlertDialog.Builder(MapsActivity.this);
+            builder1.setMessage("To obtain a GPS location and to log measurements to a file, we need to have special permissions. Click below to configure the permissions now.");
+            builder1.setCancelable(true);
+
+            builder1.setPositiveButton(
+                    "Configure",
+                    new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int id) {
+                            dialog.cancel();
+                            Intent intent = new Intent(getApplicationContext(), CheckPermissions.class);
+                            startActivity(intent);
+                        }
+                    });
+
+            builder1.setNegativeButton(
+                    "Not now",
+                    new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int id) {
+                            dialog.cancel();
+                        }
+                    });
+
+            AlertDialog alert11 = builder1.create();
+            alert11.show();
+        } else {
+            //begin service
+            Intent startServiceIntent = new Intent(this, TTNMapperService.class);
+            startService(startServiceIntent);
+            bindService(startServiceIntent, mConnection, Context.BIND_AUTO_CREATE);
+        }
     }
 
     public void stopLoggingService() {
@@ -281,5 +394,177 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         Intent startServiceIntent = new Intent(this, TTNMapperService.class);
         stopService(startServiceIntent);
+    }
+
+    public boolean isPlayServicesAvailable() {
+        GoogleApiAvailability api = GoogleApiAvailability.getInstance();
+        int code = api.isGooglePlayServicesAvailable(this);
+        if (code == ConnectionResult.SUCCESS) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public void addLastMeasurementToMap() {
+        if (mMap == null) return;
+
+        MyApplication mApplication = (MyApplication) getApplicationContext();
+        if (mApplication.measurements.size() == 0) return;
+
+        Measurement measurement = mApplication.measurements.get(mApplication.measurements.size() - 1);
+        addMeasurementMarker(measurement);
+
+        if (mApplication.isLordriveMode()) {
+            addMeasurementLine(measurement);
+            addGateway(measurement);
+        }
+    }
+
+    public void reAddAllMeasurementsToMap() {
+        if (mMap == null) return;
+
+    }
+
+    public void addMeasurementMarker(Measurement measurement) {
+        createMarkerBitmaps(); //create markers if they do not exist
+
+        MarkerOptions options = new MarkerOptions();
+        double rssi = measurement.getMaxRssi();
+        if (rssi == 0) {
+            options.icon(circleBlack);
+        } else if (rssi < -120) {
+            options.icon(circleBlue);
+        } else if (rssi < -115) {
+            options.icon(circleCyan);
+        } else if (rssi < -110) {
+            options.icon(circleGreen);
+        } else if (rssi < -105) {
+            options.icon(circleYellow);
+        } else if (rssi < -100) {
+            options.icon(circleOrange);
+        } else {
+            options.icon(circleRed);
+        }
+        options.position(new LatLng(measurement.getLat(), measurement.getLon()));
+        options.anchor((float) 0.5, (float) 0.5);
+
+        mMap.addMarker(options);
+    }
+
+    public void addMeasurementLine(Measurement measurement) {
+        double gwLat = measurement.getGwlat();
+        double gwLon = measurement.getGwlon();
+        double rssi = measurement.getRssi();
+        if (gwLat != 0 && gwLon != 0) {
+            PolylineOptions options = new PolylineOptions();
+            options.add(new LatLng(measurement.getLat(), measurement.getLon()));
+            options.add(new LatLng(gwLat, gwLon));
+            if (rssi == 0) {
+                options.color(0x7f000000);
+            } else if (rssi < -120) {
+                options.color(0x7f0000ff);
+            } else if (rssi < -115) {
+                options.color(0x7f00ffff);
+            } else if (rssi < -110) {
+                options.color(0x7f00ff00);
+            } else if (rssi < -105) {
+                options.color(0x7fffff00);
+            } else if (rssi < -100) {
+                options.color(0x7fff7f00);
+            } else {
+                options.color(0x7fff0000);
+            }
+            options.width(2);
+            mMap.addPolyline(options);
+        }
+    }
+
+    public void addGateway(Measurement measurement) {
+        double gwLat = measurement.getGwlat();
+        double gwLon = measurement.getGwlon();
+
+        if (gwLat != 0 && gwLon != 0) {
+            String gatewayId = measurement.getGwaddr();
+
+            if (gatewaysWithMarkers.contains(gatewayId)) {
+                //already has a marker for this gateway
+            } else {
+                MarkerOptions gwoptions = new MarkerOptions();
+                gwoptions.icon(BitmapDescriptorFactory.fromResource(R.drawable.gateway_dot));
+                gwoptions.position(new LatLng(gwLat, gwLon));
+                gwoptions.title(gatewayId);
+                gwoptions.snippet(gatewayId);
+                gwoptions.anchor((float) 0.5, (float) 0.5);
+                mMap.addMarker(gwoptions);
+
+                gatewaysWithMarkers.add(gatewayId);
+            }
+        }
+    }
+
+    public void setStatusMessage(String message) {
+        TextView tv = (TextView) findViewById(R.id.textViewStatus);
+        tv.setText(message);
+    }
+
+    void createMarkerBitmaps() {
+        int d = 30; // diameter
+        if (circleBlack == null) {
+            bmBlack = Bitmap.createBitmap(d, d, Bitmap.Config.ARGB_8888);
+            Canvas c = new Canvas(bmBlack);
+            Paint p = new Paint();
+            p.setColor(0x7f000000);
+            c.drawCircle(d / 2, d / 2, d / 2, p);
+            circleBlack = BitmapDescriptorFactory.fromBitmap(bmBlack);
+        }
+        if (circleBlue == null) {
+            bmBlue = Bitmap.createBitmap(d, d, Bitmap.Config.ARGB_8888);
+            Canvas c = new Canvas(bmBlue);
+            Paint p = new Paint();
+            p.setColor(0x7f0000ff);
+            c.drawCircle(d / 2, d / 2, d / 2, p);
+            circleBlue = BitmapDescriptorFactory.fromBitmap(bmBlue);
+        }
+        if (circleCyan == null) {
+            bmCyan = Bitmap.createBitmap(d, d, Bitmap.Config.ARGB_8888);
+            Canvas c = new Canvas(bmCyan);
+            Paint p = new Paint();
+            p.setColor(0x7f00ffff);
+            c.drawCircle(d / 2, d / 2, d / 2, p);
+            circleCyan = BitmapDescriptorFactory.fromBitmap(bmCyan);
+        }
+        if (circleGreen == null) {
+            bmGreen = Bitmap.createBitmap(d, d, Bitmap.Config.ARGB_8888);
+            Canvas c = new Canvas(bmGreen);
+            Paint p = new Paint();
+            p.setColor(0x7f00ff00);
+            c.drawCircle(d / 2, d / 2, d / 2, p);
+            circleGreen = BitmapDescriptorFactory.fromBitmap(bmGreen);
+        }
+        if (circleYellow == null) {
+            bmYellow = Bitmap.createBitmap(d, d, Bitmap.Config.ARGB_8888);
+            Canvas c = new Canvas(bmYellow);
+            Paint p = new Paint();
+            p.setColor(0x7fffff00);
+            c.drawCircle(d / 2, d / 2, d / 2, p);
+            circleYellow = BitmapDescriptorFactory.fromBitmap(bmYellow);
+        }
+        if (circleOrange == null) {
+            bmOrange = Bitmap.createBitmap(d, d, Bitmap.Config.ARGB_8888);
+            Canvas c = new Canvas(bmOrange);
+            Paint p = new Paint();
+            p.setColor(0x7fff7f00);
+            c.drawCircle(d / 2, d / 2, d / 2, p);
+            circleOrange = BitmapDescriptorFactory.fromBitmap(bmOrange);
+        }
+        if (circleRed == null) {
+            bmRed = Bitmap.createBitmap(d, d, Bitmap.Config.ARGB_8888);
+            Canvas c = new Canvas(bmRed);
+            Paint p = new Paint();
+            p.setColor(0x7fff0000);
+            c.drawCircle(d / 2, d / 2, d / 2, p);
+            circleRed = BitmapDescriptorFactory.fromBitmap(bmRed);
+        }
     }
 }

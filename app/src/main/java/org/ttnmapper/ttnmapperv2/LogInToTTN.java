@@ -1,12 +1,16 @@
 package org.ttnmapper.ttnmapperv2;
 
+import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
+import android.webkit.CookieManager;
+import android.webkit.CookieSyncManager;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Button;
@@ -43,6 +47,22 @@ public class LogInToTTN extends AppCompatActivity {
     private OAuth2AccessToken accessToken;
 
     private OAuth20Service service;
+
+    @SuppressWarnings("deprecation")
+    public static void clearCookies(Context context) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP_MR1) {
+            CookieManager.getInstance().removeAllCookies(null);
+            CookieManager.getInstance().flush();
+        } else {
+            CookieSyncManager cookieSyncMngr = CookieSyncManager.createInstance(context);
+            cookieSyncMngr.startSync();
+            CookieManager cookieManager = CookieManager.getInstance();
+            cookieManager.removeAllCookie();
+            cookieManager.removeSessionCookie();
+            cookieSyncMngr.stopSync();
+            cookieSyncMngr.sync();
+        }
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -82,6 +102,8 @@ public class LogInToTTN extends AppCompatActivity {
     public void loadLoginPage()
     {
         final String authorizationUrl = service.getAuthorizationUrl();
+
+        clearCookies(this);
 
         WebView webview = (WebView) findViewById(R.id.webViewTTNlogin);
         webview.getSettings().setJavaScriptEnabled(true);

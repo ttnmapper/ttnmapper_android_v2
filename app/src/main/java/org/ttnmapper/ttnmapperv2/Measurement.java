@@ -22,6 +22,33 @@ public class Measurement {
     double accuracy;
     String provider;
     String mqtt_topic;
+    double maxRssi; //if this packet was received by multiple gateways, save the rssi of the best one -> used for plotting on map
+    double gwlat;
+    double gwlon;
+
+    public double getGwlon() {
+        return gwlon;
+    }
+
+    public void setGwlon(double gwlon) {
+        this.gwlon = gwlon;
+    }
+
+    public double getGwlat() {
+        return gwlat;
+    }
+
+    public void setGwlat(double gwlat) {
+        this.gwlat = gwlat;
+    }
+
+    public double getMaxRssi() {
+        return maxRssi;
+    }
+
+    public void setMaxRssi(double maxRssi) {
+        this.maxRssi = maxRssi;
+    }
 
     public String getProvider() {
         return provider;
