@@ -8,6 +8,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Paint;
@@ -21,9 +22,11 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.View;
 import android.view.WindowManager;
 import android.widget.CompoundButton;
 import android.widget.TextView;
+import android.widget.Toast;
 import android.widget.ToggleButton;
 
 import com.google.android.gms.common.ConnectionResult;
@@ -131,6 +134,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
 
+
         //logging button
         ToggleButton toggleButton = (ToggleButton) findViewById(R.id.toggleButtonStartLogging);
         toggleButton.setOnCheckedChangeListener(this);
@@ -140,9 +144,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             bindService(startServiceIntent, mConnection, Context.BIND_AUTO_CREATE);
         }
 
-        //screen on button
-        ToggleButton screenToggle = (ToggleButton) findViewById(R.id.toggleButtonScreenOn);
-        screenToggle.setOnCheckedChangeListener(this);
+        //toggle button states
+        setFABcolors();
 
         MyApplication mApplication = (MyApplication)getApplicationContext();
 
@@ -285,6 +288,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     startLoggingService();
                 } else {
                     setStatusMessage("You need to link a device before you can start logging!");
+                    Toast.makeText(this, "You need to link a device before you can start logging!", Toast.LENGTH_SHORT).show();
                     buttonView.setChecked(false);
                 }
             } else {
@@ -292,16 +296,176 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 stopLoggingService();
                 setStatusMessage("Logging stopped.");
             }
-        } else if (buttonView.getId() == R.id.toggleButtonScreenOn) {
-            if (isChecked) {
-                Log.d(TAG, "Screen on flag set");
-                getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-            } else {
-                Log.d(TAG, "Screen on flag cleared");
-                getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-            }
+        }
+    }
+
+    public void setFABcolors() {
+        SharedPreferences myPrefs = this.getSharedPreferences("myPrefs", MODE_PRIVATE);
+
+        com.github.clans.fab.FloatingActionButton floatingActionButton = (com.github.clans.fab.FloatingActionButton) findViewById(R.id.fabItemScreenOn);
+        if (myPrefs.getBoolean("keepScreenOn", false)) {
+            floatingActionButton.setColorNormalResId(R.color.fab_green_dark);
+            floatingActionButton.setColorPressedResId(R.color.fab_green_light);
+
+            //Set on
+            getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        } else {
+            floatingActionButton.setColorNormalResId(R.color.fab_red_dark);
+            floatingActionButton.setColorPressedResId(R.color.fab_red_light);
+
+            //Set off
+            getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         }
 
+
+        floatingActionButton = (com.github.clans.fab.FloatingActionButton) findViewById(R.id.fabItemAutoCenter);
+        if (myPrefs.getBoolean("autoCenter", true)) {
+            floatingActionButton.setColorNormalResId(R.color.fab_green_dark);
+            floatingActionButton.setColorPressedResId(R.color.fab_green_light);
+            //Can be applied in runtime
+        } else {
+            floatingActionButton.setColorNormalResId(R.color.fab_red_dark);
+            floatingActionButton.setColorPressedResId(R.color.fab_red_light);
+            //Can be applied in runtime
+        }
+
+
+        floatingActionButton = (com.github.clans.fab.FloatingActionButton) findViewById(R.id.fabItemAutoZoom);
+        if (myPrefs.getBoolean("autoZoom", true)) {
+            floatingActionButton.setColorNormalResId(R.color.fab_green_dark);
+            floatingActionButton.setColorPressedResId(R.color.fab_green_light);
+            //TODO: zoom map once
+        } else {
+            floatingActionButton.setColorNormalResId(R.color.fab_red_dark);
+            floatingActionButton.setColorPressedResId(R.color.fab_red_light);
+            //Just do not zoom anymore. Runtime.
+        }
+
+
+        floatingActionButton = (com.github.clans.fab.FloatingActionButton) findViewById(R.id.fabItemLordrive);
+        if (myPrefs.getBoolean("lordrivemode", true)) {
+            floatingActionButton.setColorNormalResId(R.color.fab_green_dark);
+            floatingActionButton.setColorPressedResId(R.color.fab_green_light);
+            //Will be done at first packet received
+        } else {
+            floatingActionButton.setColorNormalResId(R.color.fab_red_dark);
+            floatingActionButton.setColorPressedResId(R.color.fab_red_light);
+            //Will be done in runtime
+        }
+
+
+        floatingActionButton = (com.github.clans.fab.FloatingActionButton) findViewById(R.id.fabItemCoverage);
+        if (myPrefs.getBoolean("coverage", false)) {
+            floatingActionButton.setColorNormalResId(R.color.fab_green_dark);
+            floatingActionButton.setColorPressedResId(R.color.fab_green_light);
+            //TODO: add layer to map
+        } else {
+            floatingActionButton.setColorNormalResId(R.color.fab_red_dark);
+            floatingActionButton.setColorPressedResId(R.color.fab_red_light);
+            //TODO: remove layer from map
+        }
+    }
+
+    public void onToggleScreen(View v) {
+        com.github.clans.fab.FloatingActionButton floatingActionButton = (com.github.clans.fab.FloatingActionButton) v;
+        SharedPreferences myPrefs = this.getSharedPreferences("myPrefs", MODE_PRIVATE);
+        boolean previousState = myPrefs.getBoolean("keepScreenOn", false);
+        if (previousState) {
+            floatingActionButton.setColorNormalResId(R.color.fab_red_dark);
+            floatingActionButton.setColorPressedResId(R.color.fab_red_light);
+
+            //It was on, now off
+            getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        } else {
+            floatingActionButton.setColorNormalResId(R.color.fab_green_dark);
+            floatingActionButton.setColorPressedResId(R.color.fab_green_light);
+
+            //It was off, now on
+            getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        }
+        SharedPreferences.Editor prefsEditor = myPrefs.edit();
+        prefsEditor.putBoolean("keepScreenOn", !previousState);
+        prefsEditor.apply();
+    }
+
+    public void onToggleAutoCenter(View v) {
+        com.github.clans.fab.FloatingActionButton floatingActionButton = (com.github.clans.fab.FloatingActionButton) v;
+        SharedPreferences myPrefs = this.getSharedPreferences("myPrefs", MODE_PRIVATE);
+        boolean previousState = myPrefs.getBoolean("autoCenter", false);
+        if (previousState) {
+            floatingActionButton.setColorNormalResId(R.color.fab_red_dark);
+            floatingActionButton.setColorPressedResId(R.color.fab_red_light);
+
+            //It's off now, do nothing
+        } else {
+            floatingActionButton.setColorNormalResId(R.color.fab_green_dark);
+            floatingActionButton.setColorPressedResId(R.color.fab_green_light);
+
+            //TODO: center map now
+        }
+        SharedPreferences.Editor prefsEditor = myPrefs.edit();
+        prefsEditor.putBoolean("autoCenter", !previousState);
+        prefsEditor.apply();
+    }
+
+    public void onToggleAutoZoom(View v) {
+        com.github.clans.fab.FloatingActionButton floatingActionButton = (com.github.clans.fab.FloatingActionButton) v;
+        SharedPreferences myPrefs = this.getSharedPreferences("myPrefs", MODE_PRIVATE);
+        boolean previousState = myPrefs.getBoolean("autoZoom", false);
+        if (previousState) {
+            floatingActionButton.setColorNormalResId(R.color.fab_red_dark);
+            floatingActionButton.setColorPressedResId(R.color.fab_red_light);
+
+            //It's off now, do nothing
+        } else {
+            floatingActionButton.setColorNormalResId(R.color.fab_green_dark);
+            floatingActionButton.setColorPressedResId(R.color.fab_green_light);
+
+            //TODO: autozoom now
+        }
+        SharedPreferences.Editor prefsEditor = myPrefs.edit();
+        prefsEditor.putBoolean("autoZoom", !previousState);
+        prefsEditor.apply();
+    }
+
+    public void onToggleLordrive(View v) {
+        com.github.clans.fab.FloatingActionButton floatingActionButton = (com.github.clans.fab.FloatingActionButton) v;
+        SharedPreferences myPrefs = this.getSharedPreferences("myPrefs", MODE_PRIVATE);
+        boolean previousState = myPrefs.getBoolean("lordrivemode", false);
+        if (previousState) {
+            floatingActionButton.setColorNormalResId(R.color.fab_red_dark);
+            floatingActionButton.setColorPressedResId(R.color.fab_red_light);
+
+            //TODO: do a map redraw
+        } else {
+            floatingActionButton.setColorNormalResId(R.color.fab_green_dark);
+            floatingActionButton.setColorPressedResId(R.color.fab_green_light);
+
+            //TODO: do a map redraw
+        }
+        SharedPreferences.Editor prefsEditor = myPrefs.edit();
+        prefsEditor.putBoolean("lordrivemode", !previousState);
+        prefsEditor.apply();
+    }
+
+    public void onToggleCoverage(View v) {
+        com.github.clans.fab.FloatingActionButton floatingActionButton = (com.github.clans.fab.FloatingActionButton) v;
+        SharedPreferences myPrefs = this.getSharedPreferences("myPrefs", MODE_PRIVATE);
+        boolean previousState = myPrefs.getBoolean("coverage", false);
+        if (previousState) {
+            floatingActionButton.setColorNormalResId(R.color.fab_red_dark);
+            floatingActionButton.setColorPressedResId(R.color.fab_red_light);
+
+            //TODO: remove layer from map
+        } else {
+            floatingActionButton.setColorNormalResId(R.color.fab_green_dark);
+            floatingActionButton.setColorPressedResId(R.color.fab_green_light);
+
+            //TODO: add layer to map
+        }
+        SharedPreferences.Editor prefsEditor = myPrefs.edit();
+        prefsEditor.putBoolean("coverage", !previousState);
+        prefsEditor.apply();
     }
 
     public void restartLogging() {

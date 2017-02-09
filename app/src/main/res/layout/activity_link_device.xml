@@ -20,126 +20,126 @@
             android:layout_height="wrap_content">
 
             <TextView
-                android:text="Application ID"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_alignParentTop="true"
-                android:layout_alignParentLeft="true"
-                android:layout_alignParentStart="true"
                 android:id="@+id/textView6"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_alignParentLeft="true"
+                android:layout_alignParentStart="true"
+                android:layout_alignParentTop="true"
+                android:text="Application ID"
                 android:textStyle="bold" />
 
             <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_below="@+id/textView6"
-                android:layout_alignParentLeft="true"
-                android:layout_alignParentStart="true"
                 android:id="@+id/textViewApplicationID"
-                android:textAlignment="textEnd"
-                android:gravity="end" />
-
-            <TextView
-                android:text="Device ID"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_below="@+id/textViewApplicationID"
                 android:layout_alignParentLeft="true"
                 android:layout_alignParentStart="true"
+                android:layout_below="@+id/textView6"
+                android:gravity="end"
+                android:textAlignment="textEnd" />
+
+            <TextView
                 android:id="@+id/textView8"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_alignParentLeft="true"
+                android:layout_alignParentStart="true"
+                android:layout_below="@+id/textViewApplicationID"
+                android:text="Device ID"
                 android:textStyle="bold" />
 
             <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_below="@+id/textView8"
-                android:layout_alignParentLeft="true"
-                android:layout_alignParentStart="true"
                 android:id="@+id/textViewDeviceID"
-                android:textAlignment="textEnd"
-                android:gravity="end" />
-
-            <TextView
-                android:text="Access Key"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_below="@+id/textViewDeviceID"
                 android:layout_alignParentLeft="true"
                 android:layout_alignParentStart="true"
+                android:layout_below="@+id/textView8"
+                android:gravity="end"
+                android:textAlignment="textEnd" />
+
+            <TextView
                 android:id="@+id/textView10"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_alignParentLeft="true"
+                android:layout_alignParentStart="true"
+                android:layout_below="@+id/textViewDeviceID"
+                android:text="Access Key"
                 android:textStyle="bold" />
 
             <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_below="@+id/textView10"
-                android:layout_alignParentLeft="true"
-                android:layout_alignParentStart="true"
                 android:id="@+id/textViewAccessKey"
-                android:textAlignment="textEnd"
-                android:gravity="end" />
-
-            <TextView
-                android:text="MQTT broker"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_below="@+id/textViewAccessKey"
                 android:layout_alignParentLeft="true"
                 android:layout_alignParentStart="true"
+                android:layout_below="@+id/textView10"
+                android:gravity="end"
+                android:textAlignment="textEnd" />
+
+            <TextView
                 android:id="@+id/textView13"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_alignParentLeft="true"
+                android:layout_alignParentStart="true"
+                android:layout_below="@+id/textViewAccessKey"
+                android:text="MQTT broker"
                 android:textStyle="bold" />
 
             <TextView
+                android:id="@+id/textViewBroker"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_below="@+id/textView13"
                 android:layout_alignParentLeft="true"
                 android:layout_alignParentStart="true"
-                android:id="@+id/textViewBroker"
-                android:textAlignment="textEnd"
-                android:gravity="end" />
+                android:layout_below="@+id/textView13"
+                android:gravity="end"
+                android:textAlignment="textEnd" />
 
             <TextView
-                android:text="You can manually configure the details above, or log in with your TTN account and select the correct device."
+                android:id="@+id/textView12"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:id="@+id/textView12"
-                android:layout_below="@+id/textViewBroker"
                 android:layout_alignParentLeft="true"
                 android:layout_alignParentStart="true"
+                android:layout_below="@+id/textViewBroker"
+                android:paddingBottom="15dp"
                 android:paddingTop="15dp"
-                android:paddingBottom="15dp"/>
+                android:text="You can manually configure the details above, or log in with your TTN account and select the correct device." />
 
             <Button
-                android:text="Manually configure"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
                 android:id="@+id/button4"
-                android:onClick="onClickManualConfigure"
-                android:layout_below="@+id/textView12"
-                android:layout_alignParentLeft="true"
-                android:layout_alignParentStart="true" />
-
-            <Button
-                android:text="Log in and select device"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_alignParentLeft="true"
+                android:layout_alignParentStart="true"
+                android:layout_below="@+id/textView12"
+                android:onClick="onClickManualConfigure"
+                android:text="Manually configure" />
+
+            <Button
                 android:id="@+id/button3"
-                android:onClick="onClickLogIn"
-                android:layout_below="@+id/button4"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
                 android:layout_alignParentRight="true"
-                android:layout_alignParentEnd="true" />
+                android:layout_below="@+id/button4"
+                android:onClick="onClickLogIn"
+                android:text="Log in and select device" />
 
         </RelativeLayout>
     </ScrollView>
 
     <Button
-        android:text="Back"
+        android:id="@+id/button2"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true"
-        android:id="@+id/button2"
-        android:onClick="onClickBack" />
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentRight="true"
+        android:onClick="onClickBack"
+        android:text="Close" />
 </RelativeLayout>

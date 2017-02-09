@@ -3,4 +3,14 @@
     <color name="colorPrimary">#3F51B5</color>
     <color name="colorPrimaryDark">#303F9F</color>
     <color name="colorAccent">#FF4081</color>
+
+    <!--green: 500#4CAF50 600#43A047 -->
+    <color name="fab_green_dark">#43A047</color>
+    <color name="fab_green_light">#4CAF50</color>
+    <!--blue: 500#03A9F4 600#039BE5 -->
+    <color name="fab_blue_dark">#03A9F4</color>
+    <color name="fab_blue_light">#039BE5</color>
+    <!--red: 700#E64A19 800#D84315 -->
+    <color name="fab_red_dark">#D84315</color>
+    <color name="fab_red_light">#E64A19</color>
 </resources>
