@@ -64,6 +64,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     Bitmap bmRed;
     ArrayList<String> gatewaysWithMarkers = new ArrayList<>();
     private GoogleMap mMap;
+    private boolean startUpComplete = false;
     /**
      * Defines callbacks for service binding, passed to bindService()
      */
@@ -137,12 +138,16 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         //logging button
         ToggleButton toggleButton = (ToggleButton) findViewById(R.id.toggleButtonStartLogging);
-        toggleButton.setOnCheckedChangeListener(this);
+        //first change the button state, then add the listener
         if (isMyServiceRunning(TTNMapperService.class)) {
             toggleButton.setChecked(true);
             Intent startServiceIntent = new Intent(this, TTNMapperService.class);
             bindService(startServiceIntent, mConnection, Context.BIND_AUTO_CREATE);
+
         }
+
+        //second the listener
+        toggleButton.setOnCheckedChangeListener(this);
 
         //toggle button states
         setFABcolors();
@@ -225,7 +230,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
 
         if (isMyServiceRunning(TTNMapperService.class)) {
-            restartLogging();
+            //restartLogging();
             setStatusMessage("Logging in progress.");
         }
 
@@ -233,21 +238,33 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         LocalBroadcastManager.getInstance(this).registerReceiver(mMessageReceiver,
                 new IntentFilter("ttn-mapper-service-event"));
 
+        startUpComplete = true;
+
         //TODO: refresh view with new data from application class
     }
 
     @Override
     protected void onPause() {
+        Log.d(TAG, "onPause");
+        startUpComplete = false;
         // Unregister since the activity is not visible
         LocalBroadcastManager.getInstance(this).unregisterReceiver(mMessageReceiver);
+        // Unbind from the service
+        if (mBound) {
+            Log.d(TAG, "Unbinding");
+            unbindService(mConnection);
+            mBound = false;
+        }
         super.onPause();
     }
 
     @Override
     protected void onStop() {
+        Log.d(TAG, "onStop");
         super.onStop();
         // Unbind from the service
         if (mBound) {
+            Log.d(TAG, "Unbinding");
             unbindService(mConnection);
             mBound = false;
         }
@@ -285,7 +302,15 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 if (mApplication.isConfigured()) {
                     Log.d(TAG, "Starting logging");
                     setStatusMessage("Logging started.");
-                    startLoggingService();
+
+                    //only start the service if we are not already bound to it
+                    if (!mBound && !isMyServiceRunning(TTNMapperService.class)) {
+                        startLoggingService();
+                    } else if (isMyServiceRunning(TTNMapperService.class)) {
+                        Log.d(TAG, "Trying to start a service that is already running.");
+                    } else {
+                        Log.d(TAG, "Trying to start a service that is already bound.");
+                    }
                 } else {
                     setStatusMessage("You need to link a device before you can start logging!");
                     Toast.makeText(this, "You need to link a device before you can start logging!", Toast.LENGTH_SHORT).show();

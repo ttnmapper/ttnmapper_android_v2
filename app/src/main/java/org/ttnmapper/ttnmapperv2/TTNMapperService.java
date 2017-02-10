@@ -130,8 +130,8 @@ public class TTNMapperService extends Service implements GoogleApiClient.Connect
         mApplication.setLatestAlt(location.getAltitude());
         mApplication.setLatestAcc(location.getAccuracy());
         mApplication.setLatestProvider(location.getProvider());
-        Log.d(TAG, "Provider=" + location.getProvider());
-        Log.d(TAG, "Accuracy=" + location.getAccuracy());
+//        Log.d(TAG, "Provider=" + location.getProvider());
+//        Log.d(TAG, "Accuracy=" + location.getAccuracy());
 
         //notify activity for auto center and zoom
         Intent intent = new Intent("ttn-mapper-service-event");
@@ -186,7 +186,8 @@ public class TTNMapperService extends Service implements GoogleApiClient.Connect
                     MyApplication mApplication = (MyApplication) getApplicationContext();
 
                     if (mApplication.getLatestAcc() > 10) {
-                        Log.d(TAG, "Packet received, GPS not accurate enough");
+                        Log.d(TAG, "Packet received, GPS not accurate enough " + message.toString());
+                        Log.d(TAG, message.isDuplicate() + "");
                         sendNotification("Packet received, but location of phone is not accurate enough. Try going outside.\nCurrent accuracy: " +
                                 (Math.round(mApplication.getLatestAcc() * 100) / 100) + " metres\n" +
                                 (new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date())));
@@ -228,7 +229,7 @@ public class TTNMapperService extends Service implements GoogleApiClient.Connect
                 try {
                     Log.d(TAG, "Disconnecting MQTT");
                     mqttClient.disconnect();
-                    mqttClient = null;
+                    mqttClient.close();
                 } catch (MqttException e) {
                     e.printStackTrace();
                 }
@@ -254,7 +255,7 @@ public class TTNMapperService extends Service implements GoogleApiClient.Connect
 
     @Override
     public void onConnectionSuspended(int i) {
-
+        Log.d(TAG, "onConnectionSuspended");
     }
 
     @Override
