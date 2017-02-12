@@ -504,6 +504,7 @@ public class LogInToTTN extends AppCompatActivity {
                        ]
                        }
                     */
+                    System.out.println(devicesResponse.getBody());
                     JSONArray devices = new JSONObject(devicesResponse.getBody()).getJSONArray("devices");
                     for(int i=0; i<devices.length(); i++)
                     {

@@ -19,9 +19,6 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
-import android.view.Menu;
-import android.view.MenuInflater;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.CompoundButton;
@@ -78,12 +75,20 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             TTNMapperService.LocalBinder binder = (TTNMapperService.LocalBinder) service;
             mService = binder.getService();
             mBound = true;
+
+            //disable toggle button until service is bound
+            ToggleButton toggleButton = (ToggleButton) findViewById(R.id.toggleButtonStartLogging);
+            toggleButton.setEnabled(true);
         }
 
         @Override
         public void onServiceDisconnected(ComponentName arg0) {
             Log.d(TAG, "onServiceDisconnected");
             mBound = false;
+
+            //disable toggle button until service is bound
+            ToggleButton toggleButton = (ToggleButton) findViewById(R.id.toggleButtonStartLogging);
+            toggleButton.setEnabled(true);
         }
     };
     // handler for received Intents for the "my-event" event
@@ -130,6 +135,10 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
+
+        // hide top bar
+        getSupportActionBar().hide();
+
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
@@ -270,28 +279,28 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
     }
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.main_menu, menu);
-        return true;
-    }
+//    @Override
+//    public boolean onCreateOptionsMenu(Menu menu) {
+//        MenuInflater inflater = getMenuInflater();
+//        inflater.inflate(R.menu.main_menu, menu);
+//        return true;
+//    }
 
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle item selection
-        switch (item.getItemId()) {
-            case R.id.device:
-                Intent intent = new Intent(this, LinkDevice.class);
-                startActivity(intent);
-                return true;
-            case R.id.settings:
-                Intent intentSettings = new Intent(this, SettingsActivity.class);
-                startActivity(intentSettings);
-                return true;
-            default:
-                return super.onOptionsItemSelected(item);
-        }
-    }
+//    public boolean onOptionsItemSelected(MenuItem item) {
+//        // Handle item selection
+//        switch (item.getItemId()) {
+//            case R.id.device:
+//                Intent intent = new Intent(this, LinkDevice.class);
+//                startActivity(intent);
+//                return true;
+//            case R.id.settings:
+//                Intent intentSettings = new Intent(this, SettingsActivity.class);
+//                startActivity(intentSettings);
+//                return true;
+//            default:
+//                return super.onOptionsItemSelected(item);
+//        }
+//    }
 
     //toggle button to start/stop logging
     @Override
@@ -493,6 +502,11 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         prefsEditor.apply();
     }
 
+    public void onSettingsClicked(View v) {
+        Intent intentSettings = new Intent(this, SettingsActivity.class);
+        startActivity(intentSettings);
+    }
+
     public void restartLogging() {
         Log.d(TAG, "Restarting logging");
 
@@ -542,7 +556,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             toggleButton.setChecked(false);
 
             AlertDialog.Builder builder1 = new AlertDialog.Builder(MapsActivity.this);
-            builder1.setMessage("To obtain a GPS location and to log measurements to a file, we need to have special permissions. Click below to configure the permissions now.");
+            builder1.setMessage("To obtain a GPS location and to log packets to a file, we need to have special permissions. Click below to configure the permissions now.");
             builder1.setCancelable(true);
 
             builder1.setPositiveButton(
@@ -566,6 +580,10 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             AlertDialog alert11 = builder1.create();
             alert11.show();
         } else {
+            //disable toggle button until service is bound
+            ToggleButton toggleButton = (ToggleButton) findViewById(R.id.toggleButtonStartLogging);
+            toggleButton.setEnabled(false);
+
             //begin service
             Intent startServiceIntent = new Intent(this, TTNMapperService.class);
             startService(startServiceIntent);
@@ -588,38 +606,33 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     public boolean isPlayServicesAvailable() {
         GoogleApiAvailability api = GoogleApiAvailability.getInstance();
         int code = api.isGooglePlayServicesAvailable(this);
-        if (code == ConnectionResult.SUCCESS) {
-            return true;
-        } else {
-            return false;
-        }
+        return code == ConnectionResult.SUCCESS;
+    }
+
+    public void clearAndReaddAllToMap() {
+
     }
 
     public void addLastMeasurementToMap() {
         if (mMap == null) return;
 
         MyApplication mApplication = (MyApplication) getApplicationContext();
-        if (mApplication.measurements.size() == 0) return;
+        if (mApplication.lastPacket == null) return;
 
-        Measurement measurement = mApplication.measurements.get(mApplication.measurements.size() - 1);
-        addMeasurementMarker(measurement);
+        Packet packet = mApplication.lastPacket;
+        addMeasurementMarker(packet);
 
         if (mApplication.isLordriveMode()) {
-            addMeasurementLine(measurement);
-            addGateway(measurement);
+            addMeasurementLine(packet);
+            addGateway(packet);
         }
     }
 
-    public void reAddAllMeasurementsToMap() {
-        if (mMap == null) return;
-
-    }
-
-    public void addMeasurementMarker(Measurement measurement) {
+    public void addMeasurementMarker(Packet packet) {
         createMarkerBitmaps(); //create markers if they do not exist
 
         MarkerOptions options = new MarkerOptions();
-        double rssi = measurement.getMaxRssi();
+        double rssi = packet.getMaxRssi();
         if (rssi == 0) {
             options.icon(circleBlack);
         } else if (rssi < -120) {
@@ -635,59 +648,63 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         } else {
             options.icon(circleRed);
         }
-        options.position(new LatLng(measurement.getLat(), measurement.getLon()));
+        options.position(new LatLng(packet.getLatitude(), packet.getLongitude()));
         options.anchor((float) 0.5, (float) 0.5);
 
         mMap.addMarker(options);
     }
 
-    public void addMeasurementLine(Measurement measurement) {
-        double gwLat = measurement.getGwlat();
-        double gwLon = measurement.getGwlon();
-        double rssi = measurement.getRssi();
-        if (gwLat != 0 && gwLon != 0) {
-            PolylineOptions options = new PolylineOptions();
-            options.add(new LatLng(measurement.getLat(), measurement.getLon()));
-            options.add(new LatLng(gwLat, gwLon));
-            if (rssi == 0) {
-                options.color(0x7f000000);
-            } else if (rssi < -120) {
-                options.color(0x7f0000ff);
-            } else if (rssi < -115) {
-                options.color(0x7f00ffff);
-            } else if (rssi < -110) {
-                options.color(0x7f00ff00);
-            } else if (rssi < -105) {
-                options.color(0x7fffff00);
-            } else if (rssi < -100) {
-                options.color(0x7fff7f00);
-            } else {
-                options.color(0x7fff0000);
+    public void addMeasurementLine(Packet packet) {
+        for (Gateway gateway : packet.getGateways()) {
+            double gwLat = gateway.getLatitude();
+            double gwLon = gateway.getLongitude();
+            double rssi = gateway.getRssi();
+            if (gwLat != 0 && gwLon != 0) {
+                PolylineOptions options = new PolylineOptions();
+                options.add(new LatLng(packet.getLatitude(), packet.getLongitude()));
+                options.add(new LatLng(gwLat, gwLon));
+                if (rssi == 0) {
+                    options.color(0x7f000000);
+                } else if (rssi < -120) {
+                    options.color(0x7f0000ff);
+                } else if (rssi < -115) {
+                    options.color(0x7f00ffff);
+                } else if (rssi < -110) {
+                    options.color(0x7f00ff00);
+                } else if (rssi < -105) {
+                    options.color(0x7fffff00);
+                } else if (rssi < -100) {
+                    options.color(0x7fff7f00);
+                } else {
+                    options.color(0x7fff0000);
+                }
+                options.width(2);
+                mMap.addPolyline(options);
             }
-            options.width(2);
-            mMap.addPolyline(options);
         }
     }
 
-    public void addGateway(Measurement measurement) {
-        double gwLat = measurement.getGwlat();
-        double gwLon = measurement.getGwlon();
+    public void addGateway(Packet packet) {
+        for (Gateway gateway : packet.getGateways()) {
+            double gwLat = gateway.getLatitude();
+            double gwLon = gateway.getLongitude();
 
-        if (gwLat != 0 && gwLon != 0) {
-            String gatewayId = measurement.getGwaddr();
+            if (gwLat != 0 && gwLon != 0) {
+                String gatewayId = gateway.getGatewayID();
 
-            if (gatewaysWithMarkers.contains(gatewayId)) {
-                //already has a marker for this gateway
-            } else {
-                MarkerOptions gwoptions = new MarkerOptions();
-                gwoptions.icon(BitmapDescriptorFactory.fromResource(R.drawable.gateway_dot));
-                gwoptions.position(new LatLng(gwLat, gwLon));
-                gwoptions.title(gatewayId);
-                gwoptions.snippet(gatewayId);
-                gwoptions.anchor((float) 0.5, (float) 0.5);
-                mMap.addMarker(gwoptions);
+                if (gatewaysWithMarkers.contains(gatewayId)) {
+                    //already has a marker for this gateway
+                } else {
+                    MarkerOptions gwoptions = new MarkerOptions();
+                    gwoptions.icon(BitmapDescriptorFactory.fromResource(R.drawable.gateway_dot));
+                    gwoptions.position(new LatLng(gwLat, gwLon));
+                    gwoptions.title(gatewayId);
+                    gwoptions.snippet(gatewayId);
+                    gwoptions.anchor((float) 0.5, (float) 0.5);
+                    mMap.addMarker(gwoptions);
 
-                gatewaysWithMarkers.add(gatewayId);
+                    gatewaysWithMarkers.add(gatewayId);
+                }
             }
         }
     }

@@ -15,17 +15,15 @@
         android:layout_height="match_parent"
         android:layout_above="@+id/button2">
 
-        <RelativeLayout
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content">
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
 
             <TextView
                 android:id="@+id/textView6"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_alignParentLeft="true"
-                android:layout_alignParentStart="true"
-                android:layout_alignParentTop="true"
                 android:text="Application ID"
                 android:textStyle="bold" />
 
@@ -33,9 +31,6 @@
                 android:id="@+id/textViewApplicationID"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_alignParentLeft="true"
-                android:layout_alignParentStart="true"
-                android:layout_below="@+id/textView6"
                 android:gravity="end"
                 android:textAlignment="textEnd" />
 
@@ -43,9 +38,6 @@
                 android:id="@+id/textView8"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_alignParentLeft="true"
-                android:layout_alignParentStart="true"
-                android:layout_below="@+id/textViewApplicationID"
                 android:text="Device ID"
                 android:textStyle="bold" />
 
@@ -53,9 +45,6 @@
                 android:id="@+id/textViewDeviceID"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_alignParentLeft="true"
-                android:layout_alignParentStart="true"
-                android:layout_below="@+id/textView8"
                 android:gravity="end"
                 android:textAlignment="textEnd" />
 
@@ -63,9 +52,6 @@
                 android:id="@+id/textView10"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_alignParentLeft="true"
-                android:layout_alignParentStart="true"
-                android:layout_below="@+id/textViewDeviceID"
                 android:text="Access Key"
                 android:textStyle="bold" />
 
@@ -73,9 +59,6 @@
                 android:id="@+id/textViewAccessKey"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_alignParentLeft="true"
-                android:layout_alignParentStart="true"
-                android:layout_below="@+id/textView10"
                 android:gravity="end"
                 android:textAlignment="textEnd" />
 
@@ -83,9 +66,6 @@
                 android:id="@+id/textView13"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_alignParentLeft="true"
-                android:layout_alignParentStart="true"
-                android:layout_below="@+id/textViewAccessKey"
                 android:text="MQTT broker"
                 android:textStyle="bold" />
 
@@ -93,9 +73,6 @@
                 android:id="@+id/textViewBroker"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_alignParentLeft="true"
-                android:layout_alignParentStart="true"
-                android:layout_below="@+id/textView13"
                 android:gravity="end"
                 android:textAlignment="textEnd" />
 
@@ -103,34 +80,37 @@
                 android:id="@+id/textView12"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_alignParentLeft="true"
-                android:layout_alignParentStart="true"
-                android:layout_below="@+id/textViewBroker"
-                android:paddingBottom="15dp"
-                android:paddingTop="15dp"
-                android:text="You can manually configure the details above, or log in with your TTN account and select the correct device." />
-
-            <Button
-                android:id="@+id/button4"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentLeft="true"
-                android:layout_alignParentStart="true"
-                android:layout_below="@+id/textView12"
-                android:onClick="onClickManualConfigure"
-                android:text="Manually configure" />
+                android:gravity="center"
+                android:paddingBottom="5dp"
+                android:paddingTop="25dp"
+                android:text="Log in with your The Things Network account now and select the device to link" />
 
             <Button
                 android:id="@+id/button3"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentEnd="true"
-                android:layout_alignParentRight="true"
-                android:layout_below="@+id/button4"
+                android:layout_width="match_parent"
+                android:layout_height="45dp"
+                android:background="#71d7c3"
+                android:drawableLeft="@drawable/ttn_log"
+                android:drawableStart="@drawable/ttn_log"
                 android:onClick="onClickLogIn"
                 android:text="Log in and select device" />
 
-        </RelativeLayout>
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:paddingBottom="5dp"
+                android:paddingTop="20dp"
+                android:text="or configure details manually" />
+
+            <Button
+                android:id="@+id/button4"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:onClick="onClickManualConfigure"
+                android:text="Manually configure" />
+
+        </LinearLayout>
     </ScrollView>
 
     <Button

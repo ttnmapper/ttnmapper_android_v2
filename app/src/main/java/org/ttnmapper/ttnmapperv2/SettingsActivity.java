@@ -1,5 +1,6 @@
 package org.ttnmapper.ttnmapperv2;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -8,6 +9,7 @@ import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
+import android.widget.TextView;
 
 public class SettingsActivity extends AppCompatActivity {
 
@@ -68,6 +70,19 @@ public class SettingsActivity extends AppCompatActivity {
             }
         });
 
+        // set text view to say if a device was linked yet or not
+        TextView textView = (TextView) findViewById(R.id.textViewLinekdDevice);
+        if (mApplication.isConfigured()) {
+            textView.setText("Already configured.\nUsing device with ID " + mApplication.getTtnDeviceId());
+        } else {
+            textView.setText("No device linked yet");
+        }
+
+    }
+
+    public void onLinkDeviceClicked(View v) {
+        Intent intent = new Intent(this, LinkDevice.class);
+        startActivity(intent);
     }
 
     public void onBackClicked(View v) {

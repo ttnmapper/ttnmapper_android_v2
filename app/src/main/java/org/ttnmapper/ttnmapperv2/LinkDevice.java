@@ -1,8 +1,8 @@
 package org.ttnmapper.ttnmapperv2;
 
 import android.content.Intent;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.TextView;
 
@@ -25,16 +25,32 @@ public class LinkDevice extends AppCompatActivity {
 
         MyApplication mApplication = (MyApplication)getApplicationContext();
 
-        textViewApplicationID.setText(mApplication.getTtnApplicationId());
-        textViewAccessKey.setText(mApplication.getTtnAccessKey());
-        textViewBroker.setText(mApplication.getTtnBroker());
-
-        String deviceID = mApplication.getTtnDeviceId();
-        if(deviceID.equals("+"))
-        {
-            deviceID = "All devices in application";
+        if (mApplication.getTtnApplicationId().equals("")) {
+            textViewApplicationID.setText("<not configured>");
+        } else {
+            textViewApplicationID.setText(mApplication.getTtnApplicationId());
         }
-        textViewDeviceID.setText(deviceID);
+
+        if (mApplication.getTtnAccessKey().equals(""))
+        {
+            textViewAccessKey.setText("<not configured>");
+        } else {
+            textViewAccessKey.setText(mApplication.getTtnAccessKey());
+        }
+
+        if (mApplication.getTtnBroker().equals("")) {
+            textViewBroker.setText("<not configured>");
+        } else {
+            textViewBroker.setText(mApplication.getTtnBroker());
+        }
+
+        if (mApplication.getTtnDeviceId().equals("")) {
+            textViewDeviceID.setText("<not configured>");
+        } else if (mApplication.getTtnDeviceId().equals("+")) {
+            textViewDeviceID.setText("All devices in application");
+        } else {
+            textViewDeviceID.setText(mApplication.getTtnDeviceId());
+        }
     }
 
     public void onClickLogIn(View v) {

@@ -15,7 +15,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -23,6 +22,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Locale;
 import java.util.TimeZone;
 
 import okhttp3.Call;
@@ -42,7 +42,8 @@ public class MyApplication extends Application {
     private static MyApplication singleton;
     public ArrayList<TTNApplication> ttnApplications = new ArrayList<>();
     public TTNApplication chosenTtnApplication = null;
-    public ArrayList<Measurement> measurements = new ArrayList<>();
+    public ArrayList<Packet> packets = new ArrayList<>();
+    public Packet lastPacket;
     private boolean shouldUpload;
     private boolean isExperiment;
     private boolean saveToFile;
@@ -106,7 +107,7 @@ public class MyApplication extends Application {
         saveToFile = myPrefs.getBoolean("saveToFile", true);
 
         TimeZone tz = TimeZone.getTimeZone("UTC");
-        DateFormat df = new SimpleDateFormat("yyyyMMddHHmm"); // Quoted "Z" to indicate UTC, no timezone offset
+        DateFormat df = new SimpleDateFormat("yyyyMMddHHmm", Locale.ENGLISH); // Quoted "Z" to indicate UTC, no timezone offset
         df.setTimeZone(tz);
         String nowAsISO = df.format(new Date());
         experimentName = myPrefs.getString("experimentName", "experiment_" + nowAsISO);
@@ -284,11 +285,8 @@ public class MyApplication extends Application {
             return false;
         } else if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             return false;
-        } else if (saveToFile && ActivityCompat.checkSelfPermission(this, android.Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-            return false;
-        } else {
-            return true;
-        }
+        } else
+            return !(saveToFile && ActivityCompat.checkSelfPermission(this, android.Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED);
     }
 
     public void logPacket(String topic, String payload) {
@@ -299,114 +297,122 @@ public class MyApplication extends Application {
             return;
         }
 
-        /*
-        {
-          "app_id":"jpm_testing",
-          "dev_id":"arduino_uno_rn2483",
-          "hardware_serial":"00999B8A917DBB71",
-          "port":1,
-          "counter":123,
-          "payload_raw":"IQ==",
-          "metadata":{
-            "time":"2017-02-07T11:03:29.086549185Z",
-            "frequency":868.1,
-            "modulation":"LORA",
-            "data_rate":"SF7BW125",
-            "coding_rate":"4/5",
-            "gateways":
-              [
-                {
-                  "gtw_id":"eui-1dee039aac75c307",
-                  "timestamp":1401010363,
-                  "time":"",
-                  "channel":0,
-                  "rssi":-108,
-                  "snr":-5,
-                  "rf_chain":1,
-                  "latitude":52.2388,
-                  "longitude":6.8551,
-                  "altitude":6
-                }
-              ]
-            }
-          }
-         */
         try {
             JSONObject packetData = new JSONObject(payload);
             JSONObject metadata = packetData.getJSONObject("metadata");
             JSONArray gateways = metadata.getJSONArray("gateways");
 
-            double maxRssi = 0;
-            for (int i = 0; i < gateways.length(); i++) {
-                JSONObject gateway = gateways.getJSONObject(i);
-                if (maxRssi == 0 || maxRssi < gateway.getDouble("rssi")) {
-                    maxRssi = gateway.getDouble("rssi");
-                }
-            }
+            Packet packet = new Packet();
+            packet.setAppID(packetData.getString(APIJsonFields.TTNPacket.APPID));
+            packet.setDeviceID(packetData.getString(APIJsonFields.TTNPacket.DEVID));
+
+            packet.setTime(metadata.getString(APIJsonFields.TTNMetadata.TIME));
+            packet.setFrequency(metadata.getDouble(APIJsonFields.TTNMetadata.FREQUENCY));
+            packet.setModulation(metadata.getString(APIJsonFields.TTNMetadata.MODULATION));
+            packet.setDataRate(metadata.getString(APIJsonFields.TTNMetadata.DATA_RATE));
+            packet.setCodingRate(metadata.getString(APIJsonFields.TTNMetadata.CODING_RATE));
+
+            packet.setLatitude(latestLat);
+            packet.setLongitude(latestLon);
+            packet.setAltitude(latestAlt);
+            packet.setAccuracy(latestAcc);
+            packet.setProvider(latestProvider);
+
+            packet.setMqttTopic(topic);
 
             for (int i = 0; i < gateways.length(); i++) {
-                JSONObject gateway = gateways.getJSONObject(i);
+                JSONObject gatewayFromJson = gateways.getJSONObject(i);
 
-                Measurement measurement = new Measurement();
-                measurement.setTime(metadata.getString("time"));
-                measurement.setNodeaddr(packetData.getString("dev_id"));
-                measurement.setGwaddr(gateway.getString("gtw_id"));
-                measurement.setSnr(gateway.getDouble("snr"));
-                measurement.setRssi(gateway.getDouble("rssi"));
-                measurement.setFreq(metadata.getDouble("frequency"));
-                measurement.setLat(latestLat);
-                measurement.setLon(latestLon);
-                measurement.setDatarate(metadata.getString("data_rate"));
-                measurement.setAppeui(packetData.getString("app_id"));
-                measurement.setAlt(latestAlt);
-                measurement.setAccuracy(latestAcc);
-                measurement.setProvider(latestProvider);
-                measurement.setMqtt_topic(topic);
+                Gateway gatewayToSave = new Gateway();
+                gatewayToSave.setGatewayID(gatewayFromJson.getString(APIJsonFields.TTNGateway.ID));
+                gatewayToSave.setTimestamp(gatewayFromJson.getString(APIJsonFields.TTNGateway.TIMESTAMP));
+                gatewayToSave.setTime(gatewayFromJson.getString(APIJsonFields.TTNGateway.TIME));
+                gatewayToSave.setChannel(gatewayFromJson.getInt(APIJsonFields.TTNGateway.CHANNEL));
+                gatewayToSave.setRssi(gatewayFromJson.getDouble(APIJsonFields.TTNGateway.RSSI));
+                gatewayToSave.setSnr(gatewayFromJson.getDouble(APIJsonFields.TTNGateway.SNR));
+                gatewayToSave.setRfChain(gatewayFromJson.getInt(APIJsonFields.TTNGateway.RFCHAIN));
+                gatewayToSave.setLatitude(gatewayFromJson.getDouble(APIJsonFields.TTNGateway.LATITUDE));
+                gatewayToSave.setLongitude(gatewayFromJson.getDouble(APIJsonFields.TTNGateway.LONGITUDE));
+                gatewayToSave.setAltitude(gatewayFromJson.getDouble(APIJsonFields.TTNGateway.ALTITUDE));
 
-                //save details for plotting on map
-                measurement.setMaxRssi(maxRssi);
-                measurement.setGwlat(gateway.getDouble("latitude"));
-                measurement.setGwlon(gateway.getDouble("longitude"));
-
-                measurements.add(measurement);
-
-                if (shouldUpload) {
-                    uploadMeasurement(measurement);
-                    uploadGateway(gateway);
-                }
-                if (saveToFile) {
-                    saveMeasurementToFIle(measurement);
-                }
+                packet.addGateway(gatewayToSave);
             }
+            packets.add(packet);
+            lastPacket = packet;
+
+            if (shouldUpload) {
+                uploadMeasurement(packet);
+            }
+            if (saveToFile) {
+                saveMeasurementToFile(packet);
+            }
+
         } catch (JSONException e) {
             e.printStackTrace();
             Log.d(TAG, "Parsing packet payload failed with a json error");
         }
     }
 
-    private void saveMeasurementToFIle(Measurement measurement) {
+    private void saveMeasurementToFile(Packet packet) {
         Log.d(TAG, "Saving to file");
 
-        // Find the root of the external storage.
-        // See http://developer.android.com/guide/topics/data/data-storage.html#filesExternal
-        File root = android.os.Environment.getExternalStorageDirectory();
-
-        // See http://stackoverflow.com/questions/3551821/android-write-to-sd-card-folder
-        File dir = new File(root.getAbsolutePath() + "/ttnmapper_logs");
-        dir.mkdirs();
-        File file = new File(dir, fileName);
+        //TODO: Maybe we can serialize the packet object directly and save that to the file
 
         try {
+            // Find the root of the external storage.
+            // See http://developer.android.com/guide/topics/data/data-storage.html#filesExternal
+            File root = android.os.Environment.getExternalStorageDirectory();
+
+            // See http://stackoverflow.com/questions/3551821/android-write-to-sd-card-folder
+            File dir = new File(root.getAbsolutePath() + "/ttnmapper_logs");
+            dir.mkdirs();
+            File file = new File(dir, fileName);
+
             final FileOutputStream f = new FileOutputStream(file, true);
             final PrintWriter pw = new PrintWriter(f);
-            pw.println(measurement.getJSON().toString().trim());
+
+            for (Gateway gateway : packet.getGateways()) {
+
+                JSONObject toPost = new JSONObject();
+
+                try {
+                    toPost.put(APIJsonFields.MapperPacket.TIME, packet.getTime());
+                    toPost.put(APIJsonFields.MapperPacket.DEVID, packet.getDeviceID());
+                    toPost.put(APIJsonFields.MapperPacket.APPID, packet.getAppID());
+                    toPost.put(APIJsonFields.MapperPacket.GTWID, gateway.getGatewayID());
+                    toPost.put(APIJsonFields.MapperPacket.RSSI, gateway.getRssi());
+                    toPost.put(APIJsonFields.MapperPacket.SNR, gateway.getSnr());
+                    toPost.put(APIJsonFields.MapperPacket.MODULATION, packet.getModulation());
+                    toPost.put(APIJsonFields.MapperPacket.FREQUENCY, packet.getFrequency());
+                    toPost.put(APIJsonFields.MapperPacket.DATA_RATE, packet.getDataRate());
+                    toPost.put(APIJsonFields.MapperPacket.CODING_RATE, packet.getCodingRate());
+                    toPost.put(APIJsonFields.MapperPacket.LATITUDE, packet.getLatitude());
+                    toPost.put(APIJsonFields.MapperPacket.LONGITUDE, packet.getLongitude());
+                    toPost.put(APIJsonFields.MapperPacket.ALTITUDE, packet.getAltitude());
+                    toPost.put(APIJsonFields.MapperPacket.ACCURACY, packet.getAccuracy());
+                    toPost.put(APIJsonFields.MapperPacket.PROVIDER, packet.getProvider());
+                    toPost.put(APIJsonFields.MapperPacket.MQTT_TOPIC, packet.getMqttTopic());
+                    toPost.put(APIJsonFields.MapperPacket.INSTANCE_ID, InstanceID.getInstance(getApplicationContext()).getId());
+
+                    //set the app instance ID (https://developers.google.com/instance-id/)
+                    final PackageInfo pInfo = getPackageManager().getPackageInfo(getPackageName(), 0);
+                    final String version = pInfo.versionName;
+                    int verCode = pInfo.versionCode;
+                    try {
+                        toPost.put(APIJsonFields.MapperPacket.USER_AGENT, "Android" + android.os.Build.VERSION.RELEASE + " App" + verCode + ":" + version);
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+
+                } catch (JSONException | PackageManager.NameNotFoundException e) {
+                    e.printStackTrace();
+                }
+
+                pw.println(toPost.toString());
+            }
             pw.flush();
             pw.close();
             f.close();
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-            Log.i(TAG, "******* File not found. Did you" +
-                    " add a WRITE_EXTERNAL_STORAGE permission to the   manifest?");
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -423,132 +429,82 @@ public class MyApplication extends Application {
         return call;
     }
 
-    private void uploadMeasurement(Measurement measurement) {
-        Log.d(TAG, "Uploading: " + measurement.getJSON().toString());
+    private void uploadMeasurement(Packet packet) {
+        for (Gateway gateway : packet.getGateways()) {
 
-        JSONObject toPost = measurement.getJSON();
+            JSONObject toPost = new JSONObject();
 
-        //set the app instance ID (https://developers.google.com/instance-id/)
-        try {
-            toPost.put("iid", InstanceID.getInstance(getApplicationContext()).getId());
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-
-        //add version name of this app
-        try {
-            final PackageInfo pInfo = getPackageManager().getPackageInfo(getPackageName(), 0);
-            final String version = pInfo.versionName;
-            int verCode = pInfo.versionCode;
             try {
-                toPost.put("user_agent", "Android" + android.os.Build.VERSION.RELEASE + " App" + verCode + ":" + version);
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-        } catch (PackageManager.NameNotFoundException e) {
-            e.printStackTrace();
-        }
+                toPost.put(APIJsonFields.MapperPacket.TIME, packet.getTime());
+                toPost.put(APIJsonFields.MapperPacket.DEVID, packet.getDeviceID());
+                toPost.put(APIJsonFields.MapperPacket.APPID, packet.getAppID());
+                toPost.put(APIJsonFields.MapperPacket.GTWID, gateway.getGatewayID());
+                toPost.put(APIJsonFields.MapperPacket.RSSI, gateway.getRssi());
+                toPost.put(APIJsonFields.MapperPacket.SNR, gateway.getSnr());
+                toPost.put(APIJsonFields.MapperPacket.MODULATION, packet.getModulation());
+                toPost.put(APIJsonFields.MapperPacket.FREQUENCY, packet.getFrequency());
+                toPost.put(APIJsonFields.MapperPacket.DATA_RATE, packet.getDataRate());
+                toPost.put(APIJsonFields.MapperPacket.CODING_RATE, packet.getCodingRate());
+                toPost.put(APIJsonFields.MapperPacket.LATITUDE, packet.getLatitude());
+                toPost.put(APIJsonFields.MapperPacket.LONGITUDE, packet.getLongitude());
+                toPost.put(APIJsonFields.MapperPacket.ALTITUDE, packet.getAltitude());
+                toPost.put(APIJsonFields.MapperPacket.ACCURACY, packet.getAccuracy());
+                toPost.put(APIJsonFields.MapperPacket.PROVIDER, packet.getProvider());
+                toPost.put(APIJsonFields.MapperPacket.MQTT_TOPIC, packet.getMqttTopic());
+                toPost.put(APIJsonFields.MapperPacket.INSTANCE_ID, InstanceID.getInstance(getApplicationContext()).getId());
 
-        //the only difference between a normal upload and an experiment is the experiment name parameter
-        if (isExperiment) {
-            try {
-                toPost.put("experiment", experimentName);
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-        }
-
-        //post packet
-        try {
-            postToServer(getString(R.string.ttnmapper_api_upload_packet), toPost.toString(), new Callback() {
-                @Override
-                public void onFailure(Call call, IOException e) {
-                    Log.d(TAG, "Error uploading");
+                //set the app instance ID (https://developers.google.com/instance-id/)
+                final PackageInfo pInfo = getPackageManager().getPackageInfo(getPackageName(), 0);
+                final String version = pInfo.versionName;
+                int verCode = pInfo.versionCode;
+                try {
+                    toPost.put(APIJsonFields.MapperPacket.USER_AGENT, "Android" + android.os.Build.VERSION.RELEASE + " App" + verCode + ":" + version);
+                } catch (JSONException e) {
                     e.printStackTrace();
                 }
 
-                @Override
-                public void onResponse(Call call, Response response) throws IOException {
-                    if (response.isSuccessful()) {
-                        final String returnedString = response.body().string();
-                        System.out.println("HTTP response: " + returnedString);
-                        if (!returnedString.contains("New records created successfully")) {
-                            // Request not successful
-                            Log.d(TAG, "server error: " + returnedString);
-                        }
-                        // Do what you want to do with the response.
-                    } else {
-                        // Request not successful
-                        Log.d(TAG, "server error");
-                    }
-                }
-            });
-        } catch (IOException e) {
-            Log.d(TAG, "HTTP call IO exception");
-            e.printStackTrace();
-        }
-    }
-
-    private void uploadGateway(JSONObject toPost) {
-        //set the app instance ID (https://developers.google.com/instance-id/)
-        try {
-            toPost.put("iid", InstanceID.getInstance(getApplicationContext()).getId());
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-
-        //add version name of this app
-        try {
-            final PackageInfo pInfo = getPackageManager().getPackageInfo(getPackageName(), 0);
-            final String version = pInfo.versionName;
-            int verCode = pInfo.versionCode;
-            try {
-                toPost.put("user_agent", "Android" + android.os.Build.VERSION.RELEASE + " App" + verCode + ":" + version);
-            } catch (JSONException e) {
+            } catch (JSONException | PackageManager.NameNotFoundException e) {
                 e.printStackTrace();
             }
-        } catch (PackageManager.NameNotFoundException e) {
-            e.printStackTrace();
-        }
 
-        //the only difference between a normal upload and an experiment is the experiment name parameter
-        if (isExperiment) {
-            try {
-                toPost.put("experiment", experimentName);
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-        }
-        //post packet
-        try {
-            postToServer(getString(R.string.ttnmapper_api_upload_gateway), toPost.toString(), new Callback() {
-                @Override
-                public void onFailure(Call call, IOException e) {
-                    Log.d(TAG, "Error uploading");
+            //the only difference between a normal upload and an experiment is the experiment name parameter
+            if (isExperiment) {
+                try {
+                    toPost.put(APIJsonFields.MapperPacket.EXPERIMENT, experimentName);
+                } catch (JSONException e) {
                     e.printStackTrace();
                 }
+            }
 
-                @Override
-                public void onResponse(Call call, Response response) throws IOException {
-                    if (response.isSuccessful()) {
-                        final String returnedString = response.body().string();
-                        System.out.println("HTTP response: " + returnedString);
-                        if (!returnedString.contains("New records created successfully")) {
-                            // Request not successful
-                            Log.d(TAG, "server error: " + returnedString);
-                        }
-                        // Do what you want to do with the response.
-                    } else {
-                        // Request not successful
-                        Log.d(TAG, "server error");
+            //post packet
+            try {
+                postToServer(getString(R.string.ttnmapper_api_upload_packet), toPost.toString(), new Callback() {
+                    @Override
+                    public void onFailure(Call call, IOException e) {
+                        Log.d(TAG, "Error uploading");
+                        e.printStackTrace();
                     }
-                }
-            });
-        } catch (IOException e) {
-            Log.d(TAG, "HTTP call IO exception");
-            e.printStackTrace();
+
+                    @Override
+                    public void onResponse(Call call, Response response) throws IOException {
+                        if (response.isSuccessful()) {
+                            final String returnedString = response.body().string();
+                            System.out.println("HTTP response: " + returnedString);
+                            if (!returnedString.contains("New records created successfully")) {
+                                // Request not successful
+                                Log.d(TAG, "server error: " + returnedString);
+                            }
+                            // Do what you want to do with the response.
+                        } else {
+                            // Request not successful
+                            Log.d(TAG, "server error");
+                        }
+                    }
+                });
+            } catch (IOException e) {
+                Log.d(TAG, "HTTP call IO exception");
+                e.printStackTrace();
+            }
         }
     }
-
-
 }

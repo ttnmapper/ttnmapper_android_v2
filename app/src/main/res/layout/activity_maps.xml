@@ -121,6 +121,18 @@
             fab:fab_label="Coverage"
             fab:fab_size="mini" />
 
+        <com.github.clans.fab.FloatingActionButton
+            android:id="@+id/fabItemSettings"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:onClick="onSettingsClicked"
+            android:src="@drawable/ic_menu_white_24dp"
+            fab:fab_colorNormal="@color/fab_blue_dark"
+            fab:fab_colorPressed="@color/fab_blue_light"
+            fab:fab_label="Settings"
+            fab:fab_size="mini" />
+
+
     </com.github.clans.fab.FloatingActionMenu>
 
 
