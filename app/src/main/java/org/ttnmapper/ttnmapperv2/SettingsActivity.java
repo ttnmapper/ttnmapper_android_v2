@@ -1,6 +1,8 @@
 package org.ttnmapper.ttnmapperv2;
 
 import android.content.Intent;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -27,6 +29,18 @@ public class SettingsActivity extends AppCompatActivity {
         EditText etExperimentName = (EditText) findViewById(R.id.editTextExperimentName);
         EditText etSaveToFile = (EditText) findViewById(R.id.editTextFilename);
         CheckBox cbSaveToFile = (CheckBox) findViewById(R.id.checkBoxSaveFile);
+        TextView versionText = (TextView) findViewById(R.id.textViewVersion);
+
+        // version
+        try {
+            //set the app instance ID (https://developers.google.com/instance-id/)
+            final PackageInfo pInfo = getPackageManager().getPackageInfo(getPackageName(), 0);
+            final String version = pInfo.versionName;
+            int verCode = pInfo.versionCode;
+            versionText.setText("App version number: " + verCode + "\nBuild date: " + version);
+        } catch (PackageManager.NameNotFoundException e) {
+            e.printStackTrace();
+        }
 
         // save to file
         etSaveToFile.setText(mApplication.getFileName());
