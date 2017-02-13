@@ -1,4 +1,5 @@
 [
+  //https://mapstyle.withgoogle.com/
   {
     "elementType": "geometry",
     "stylers": [
@@ -33,6 +34,15 @@
   },
   {
     "featureType": "administrative.land_parcel",
+    "elementType": "labels",
+    "stylers": [
+      {
+        "visibility": "off"
+      }
+    ]
+  },
+  {
+    "featureType": "administrative.land_parcel",
     "elementType": "labels.text.fill",
     "stylers": [
       {
@@ -46,6 +56,15 @@
     "stylers": [
       {
         "color": "#eeeeee"
+      }
+    ]
+  },
+  {
+    "featureType": "poi",
+    "elementType": "labels.text",
+    "stylers": [
+      {
+        "visibility": "off"
       }
     ]
   },
@@ -109,6 +128,15 @@
     "stylers": [
       {
         "color": "#616161"
+      }
+    ]
+  },
+  {
+    "featureType": "road.local",
+    "elementType": "labels",
+    "stylers": [
+      {
+        "visibility": "off"
       }
     ]
   },

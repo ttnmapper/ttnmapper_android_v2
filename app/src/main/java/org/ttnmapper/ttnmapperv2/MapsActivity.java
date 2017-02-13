@@ -1,5 +1,6 @@
 package org.ttnmapper.ttnmapperv2;
 
+import android.Manifest;
 import android.app.ActivityManager;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
@@ -9,13 +10,16 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Paint;
+import android.location.Location;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -29,12 +33,15 @@ import android.widget.ToggleButton;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
+import com.google.android.gms.maps.CameraUpdate;
+import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.MapStyleOptions;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.PolylineOptions;
@@ -63,6 +70,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     Bitmap bmOrange;
     Bitmap bmRed;
     ArrayList<String> gatewaysWithMarkers = new ArrayList<>();
+    ArrayList<MarkerOptions> markersOnMap = new ArrayList<>();
     private GoogleMap mMap;
     private boolean startUpComplete = false;
     /**
@@ -109,18 +117,19 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     addLastMeasurementToMap();
                     break;
                 case "locationupdate":
-                    //TODO: center and zoom map
+                    autoCenterMap();
                     break;
                 case "selfstop":
                     Log.d(TAG, "Received selfstop from service.");
                     stopLoggingService();
+                    ToggleButton toggleButton = (ToggleButton) findViewById(R.id.toggleButtonStartLogging);
+                    toggleButton.setChecked(false);
+
                     if (payloadData == null) {
                         setStatusMessage("Logging stopped unexpectedly");
                     } else {
                         setStatusMessage("Logging stopped - " + payloadData);
                     }
-                    ToggleButton toggleButton = (ToggleButton) findViewById(R.id.toggleButtonStartLogging);
-                    toggleButton.setChecked(false);
                     break;
                 case "notification":
                     setStatusMessage(payloadData);
@@ -150,13 +159,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         //logging button
         ToggleButton toggleButton = (ToggleButton) findViewById(R.id.toggleButtonStartLogging);
-        //first change the button state, then add the listener
-        if (isMyServiceRunning(TTNMapperService.class)) {
-            toggleButton.setChecked(true);
-            Intent startServiceIntent = new Intent(this, TTNMapperService.class);
-            bindService(startServiceIntent, mConnection, Context.BIND_AUTO_CREATE);
-
-        }
 
         //second the listener
         toggleButton.setOnCheckedChangeListener(this);
@@ -164,15 +166,14 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         //toggle button states
         setFABcolors();
 
-        MyApplication mApplication = (MyApplication)getApplicationContext();
+        MyApplication mApplication = (MyApplication) getApplicationContext();
 
         /*
          * First check if google play services are available for location and maps
          * Then check if a device has been configured
          * Lastly check if we have permission to do what we want. - maybe we need to do this earlier for location, but the location onChange will just never fire.
          */
-        if (!isPlayServicesAvailable())
-        {
+        if (!isPlayServicesAvailable()) {
             setStatusMessage("Google Play services needed.");
             AlertDialog.Builder builder1 = new AlertDialog.Builder(MapsActivity.this);
             builder1.setMessage("This app requires Google Play Services. Please update or install Google Play services.");
@@ -232,18 +233,22 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     protected void onResume() {
         super.onResume();
         Log.d(TAG, "onResume");
-        MyApplication mApplication = (MyApplication)getApplicationContext();
-        if(!mApplication.isConfigured()){
+        MyApplication mApplication = (MyApplication) getApplicationContext();
+        if (!mApplication.isConfigured()) {
             setStatusMessage("You have to link a device before mapping coverage.");
-        }
-        else
-        {
+        } else {
             setStatusMessage("Ready to start logging.");
         }
 
+        //logging button
+        ToggleButton toggleButton = (ToggleButton) findViewById(R.id.toggleButtonStartLogging);
         if (isMyServiceRunning(TTNMapperService.class)) {
-            //restartLogging();
             setStatusMessage("Logging in progress.");
+            toggleButton.setChecked(true);
+            Intent startServiceIntent = new Intent(this, TTNMapperService.class);
+            bindService(startServiceIntent, mConnection, Context.BIND_AUTO_CREATE);
+        } else {
+            toggleButton.setChecked(false);
         }
 
         // Register mMessageReceiver to receive messages.
@@ -252,7 +257,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         startUpComplete = true;
 
-        //TODO: refresh view with new data from application class
+        if (mMap != null) {
+            clearAndReaddAllToMap();
+        }
     }
 
     @Override
@@ -384,7 +391,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     public void onToggleScreen(View v) {
-        com.github.clans.fab.FloatingActionButton floatingActionButton = (com.github.clans.fab.FloatingActionButton) v;
+        com.github.clans.fab.FloatingActionButton floatingActionButton = (com.github.clans.fab.FloatingActionButton) findViewById(R.id.fabItemScreenOn);
         SharedPreferences myPrefs = this.getSharedPreferences(SettingConstants.PREFERENCES, MODE_PRIVATE);
         boolean previousState = myPrefs.getBoolean(SettingConstants.KEEP_SCREEN_ON, SettingConstants.KEEP_SCREEN_ON_DEFAULT);
 
@@ -408,7 +415,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     public void onToggleAutoCenter(View v) {
-        com.github.clans.fab.FloatingActionButton floatingActionButton = (com.github.clans.fab.FloatingActionButton) v;
+        com.github.clans.fab.FloatingActionButton floatingActionButton = (com.github.clans.fab.FloatingActionButton) findViewById(R.id.fabItemAutoCenter);
         SharedPreferences myPrefs = this.getSharedPreferences(SettingConstants.PREFERENCES, MODE_PRIVATE);
         boolean previousState = myPrefs.getBoolean(SettingConstants.AUTO_CENTER, SettingConstants.AUTO_CENTER_DEFAULT);
 
@@ -425,12 +432,12 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             floatingActionButton.setColorNormalResId(R.color.fab_green_dark);
             floatingActionButton.setColorPressedResId(R.color.fab_green_light);
 
-            //TODO: center map now
+            autoCenterMap();
         }
     }
 
     public void onToggleAutoZoom(View v) {
-        com.github.clans.fab.FloatingActionButton floatingActionButton = (com.github.clans.fab.FloatingActionButton) v;
+        com.github.clans.fab.FloatingActionButton floatingActionButton = (com.github.clans.fab.FloatingActionButton) findViewById(R.id.fabItemAutoZoom);
         SharedPreferences myPrefs = this.getSharedPreferences(SettingConstants.PREFERENCES, MODE_PRIVATE);
         boolean previousState = myPrefs.getBoolean(SettingConstants.AUTO_ZOOM, SettingConstants.AUTO_ZOOM_DEFAULT);
 
@@ -447,12 +454,12 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             floatingActionButton.setColorNormalResId(R.color.fab_green_dark);
             floatingActionButton.setColorPressedResId(R.color.fab_green_light);
 
-            //TODO: autozoom now
+            autoZoomMap();
         }
     }
 
     public void onToggleLordrive(View v) {
-        com.github.clans.fab.FloatingActionButton floatingActionButton = (com.github.clans.fab.FloatingActionButton) v;
+        com.github.clans.fab.FloatingActionButton floatingActionButton = (com.github.clans.fab.FloatingActionButton) findViewById(R.id.fabItemLordrive);
         SharedPreferences myPrefs = this.getSharedPreferences(SettingConstants.PREFERENCES, MODE_PRIVATE);
         boolean previousState = myPrefs.getBoolean(SettingConstants.LORDRIVE, SettingConstants.LORDRIVE_DEFAULT);
 
@@ -474,7 +481,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     public void onToggleCoverage(View v) {
-        com.github.clans.fab.FloatingActionButton floatingActionButton = (com.github.clans.fab.FloatingActionButton) v;
+        com.github.clans.fab.FloatingActionButton floatingActionButton = (com.github.clans.fab.FloatingActionButton) findViewById(R.id.fabItemCoverage);
         SharedPreferences myPrefs = this.getSharedPreferences(SettingConstants.PREFERENCES, MODE_PRIVATE);
         boolean previousState = myPrefs.getBoolean(SettingConstants.COVERAGE, SettingConstants.COVERAGE_DEFAULT);
 
@@ -535,6 +542,12 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         mMap = googleMap;
         try {
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                //do nothing
+            } else {
+                mMap.setMyLocationEnabled(true);
+            }
+
             // Customise the styling of the base map using a JSON object defined
             // in a raw resource file.
             boolean success = googleMap.setMapStyle(
@@ -544,6 +557,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             if (!success) {
                 Log.e(TAG, "Style parsing failed.");
             }
+
+            clearAndReaddAllToMap();
         } catch (Resources.NotFoundException e) {
             Log.e(TAG, "Can't find style. Error: ", e);
         }
@@ -641,6 +656,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         mMap.clear();
         gatewaysWithMarkers.clear();
+        markersOnMap.clear();
 
         for (Packet packet : mApplication.packets) {
             addMeasurementMarker(packet);
@@ -674,6 +690,10 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             addMeasurementLine(packet);
             addGateway(packet);
         }
+
+        if (myPrefs.getBoolean(SettingConstants.AUTO_ZOOM, SettingConstants.AUTO_ZOOM_DEFAULT)) {
+            autoZoomMap();
+        }
     }
 
     public void addMeasurementMarker(Packet packet) {
@@ -700,6 +720,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         options.anchor((float) 0.5, (float) 0.5);
 
         mMap.addMarker(options);
+        markersOnMap.add(options); //save a list of markers used for auto zooming
     }
 
     public void addMeasurementLine(Packet packet) {
@@ -760,6 +781,128 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     public void setStatusMessage(String message) {
         TextView tv = (TextView) findViewById(R.id.textViewStatus);
         tv.setText(message);
+    }
+
+    void autoZoomMap() {
+        MyApplication mApplication = (MyApplication) getApplicationContext();
+
+        //http://stackoverflow.com/questions/14828217/android-map-v2-zoom-to-show-all-the-markers
+        int numberOfPoints = 0;
+        double latMin = 0;
+        double latMax = 0;
+        double lonMin = 0;
+        double lonMax = 0;
+
+        LatLngBounds.Builder builder = new LatLngBounds.Builder();
+        for (MarkerOptions marker : markersOnMap) {
+            LatLng markerPosition = marker.getPosition();
+            builder.include(markerPosition);
+            numberOfPoints++;
+
+            if (latMin == 0 || markerPosition.latitude < latMin) {
+                latMin = markerPosition.latitude;
+            }
+            if (latMax == 0 || markerPosition.latitude > latMax) {
+                latMax = markerPosition.latitude;
+            }
+            if (lonMin == 0 || markerPosition.longitude < lonMin) {
+                lonMin = markerPosition.longitude;
+            }
+            if (lonMax == 0 || markerPosition.longitude > lonMax) {
+                lonMax = markerPosition.longitude;
+            }
+        }
+
+        //include current location, so that we are always in view
+        if (mApplication.getLatestLat() != 0 && mApplication.getLatestLon() != 0) {
+            builder.include(new LatLng(mApplication.getLatestLat(), mApplication.getLatestLon()));
+            numberOfPoints++;
+        }
+
+        if (numberOfPoints > 0) {
+
+            //if we keep the map centred, add as much left as right, and top as bottom
+            SharedPreferences myPrefs = this.getSharedPreferences(SettingConstants.PREFERENCES, MODE_PRIVATE);
+            if (myPrefs.getBoolean(SettingConstants.AUTO_CENTER, SettingConstants.AUTO_CENTER_DEFAULT)
+                    && mApplication.getLatestLat() != 0 && mApplication.getLatestLon() != 0) {
+                if (mApplication.getLatestLat() > latMin && latMin != 0) {
+                    builder.include(
+                            new LatLng(
+                                    mApplication.getLatestLat() + (mApplication.getLatestLat() - latMin),
+                                    mApplication.getLatestLon()
+                            )
+                    );
+                }
+
+                if (latMax > mApplication.getLatestLat() && latMax != 0) {
+                    builder.include(
+                            new LatLng(
+                                    mApplication.getLatestLat() - (latMax - mApplication.getLatestLat()),
+                                    mApplication.getLatestLon()
+                            )
+                    );
+                }
+
+                if (mApplication.getLatestLon() > lonMin && lonMin != 0) {
+                    builder.include(
+                            new LatLng(
+                                    mApplication.getLatestLat(),
+                                    mApplication.getLatestLon() + (mApplication.getLatestLon() - lonMin)
+                            )
+                    );
+                }
+
+                if (lonMax > mApplication.getLatestLon() && lonMax != 0) {
+                    builder.include(
+                            new LatLng(
+                                    mApplication.getLatestLat(),
+                                    mApplication.getLatestLon() - (lonMax - mApplication.getLatestLon())
+                            )
+                    );
+                }
+            }
+
+            LatLngBounds bounds = builder.build();
+
+            //int padding = getNavigationBarHeight(); // offset from edges of the map in pixels
+            CameraUpdate cu = CameraUpdateFactory.newLatLngBounds(bounds, 15);
+
+
+            //Finally move the map:
+            //mMap.moveCamera(cu);
+            //Or if you want an animation:
+            mMap.animateCamera(cu);
+        }
+    }
+
+    void autoCenterMap() {
+        /*
+            autocentre the map if:
+            the setting is on,
+            and we moved more than 10 meters
+            or we have not centreed the map at our location
+             */
+        SharedPreferences myPrefs = getSharedPreferences(SettingConstants.PREFERENCES, MODE_PRIVATE);
+        if (myPrefs.getBoolean(SettingConstants.AUTO_CENTER, SettingConstants.AUTO_CENTER_DEFAULT)) {
+            Location mapCentreLocation = new Location("");
+            mapCentreLocation.setLatitude(mMap.getCameraPosition().target.latitude);
+            mapCentreLocation.setLongitude(mMap.getCameraPosition().target.longitude);
+
+            MyApplication mApplication = (MyApplication) getApplicationContext();
+
+            if (mApplication.getLatestLon() != 0 && mApplication.getLatestLat() != 0) {
+                Location currentLocation = new Location("");
+                currentLocation.setLatitude(mApplication.getLatestLat());
+                currentLocation.setLongitude(mApplication.getLatestLon());
+                if (currentLocation.distanceTo(mapCentreLocation) > 10) {
+                    mMap.animateCamera(CameraUpdateFactory.newLatLng(new LatLng(mApplication.getLatestLat(), mApplication.getLatestLon())));
+                }
+            }
+        }
+
+        if (myPrefs.getBoolean(SettingConstants.AUTO_ZOOM, SettingConstants.AUTO_CENTER_DEFAULT)) {
+            autoZoomMap();
+        }
     }
 
     void createMarkerBitmaps() {

@@ -10,6 +10,7 @@ import android.location.Location;
 import android.os.Binder;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -44,6 +45,7 @@ public class TTNMapperService extends Service implements GoogleApiClient.Connect
 
     private static final int ONGOING_NOTIFICATION_ID = 1;
     private static String TAG = "LoggingService";
+    final Handler handler = new Handler();
     private final IBinder mBinder = new LocalBinder();
     private final MqttConnectOptions connOpts = new MqttConnectOptions();
     private int startId;
@@ -51,6 +53,7 @@ public class TTNMapperService extends Service implements GoogleApiClient.Connect
     private MqttClientPersistence persistence = new MemoryPersistence();
     private GoogleApiClient mGoogleApiClient;
     private LocationRequest mLocationRequest;
+    private int reconnectCounter = 0;
 
     @Override
     public IBinder onBind(Intent intent) {
@@ -95,7 +98,7 @@ public class TTNMapperService extends Service implements GoogleApiClient.Connect
         Notification.Builder notificationBuilder = new Notification.Builder(this)
                 .setContentTitle(getText(R.string.app_name))
                 .setContentText(getText(R.string.service_connected))
-                .setSmallIcon(R.mipmap.ic_launcher)
+                .setSmallIcon(R.drawable.ic_silhouette)
                 .setContentIntent(pendingIntent)
                 .setTicker(getText(R.string.service_connected));
 
@@ -138,6 +141,12 @@ public class TTNMapperService extends Service implements GoogleApiClient.Connect
         Intent intent = new Intent("ttn-mapper-service-event");
         intent.putExtra("message", "locationupdate");
         LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+
+        if (mqttClient != null) {
+            if (!mqttClient.isConnected()) {
+                mqtt_connect();
+            }
+        }
     }
 
     private void sendNotification(String message) {
@@ -168,6 +177,9 @@ public class TTNMapperService extends Service implements GoogleApiClient.Connect
 
             connOpts.setUserName(mApplication.getTtnApplicationId());
             connOpts.setPassword(mApplication.getTtnAccessKey().toCharArray());
+            connOpts.setAutomaticReconnect(true);
+            connOpts.setConnectionTimeout(10);
+            connOpts.setKeepAliveInterval(60);
 
             mqttClient.connect(connOpts);
 
@@ -175,14 +187,26 @@ public class TTNMapperService extends Service implements GoogleApiClient.Connect
                 @Override
                 public void connectionLost(final Throwable cause) {
                     Log.d(TAG, "mqtt connection lost");
-                    stopThisService("mqtt connection lost");
+                    // should reconnect automatically
+
+                    if (reconnectCounter < 10) {
+                        reconnectCounter++;
+                        handler.postDelayed(new Runnable() {
+                            @Override
+                            public void run() {
+                                //Do something after 100ms
+                                Log.d(TAG, "Should restart MQTT now");
+                                mqtt_connect();
+                            }
+                        }, 10000);
+                    } else {
+                        stopThisService("Can not reconnect MQTT");
+                    }
                 }
 
                 @Override
                 public void messageArrived(String topic, final MqttMessage message) throws Exception {
-//                    Log.d(TAG, "mqtt message arrived");
-//                    Log.d(TAG, "Topic: "+topic);
-//                    Log.d(TAG, "Payload: "+message.toString());
+                    reconnectCounter = 0;
 
                     MyApplication mApplication = (MyApplication) getApplicationContext();
 
@@ -221,6 +245,7 @@ public class TTNMapperService extends Service implements GoogleApiClient.Connect
 
         } catch (MqttException e) {
             e.printStackTrace();
+            stopThisService("MQTT connection error");
         }
     }
 
@@ -242,10 +267,12 @@ public class TTNMapperService extends Service implements GoogleApiClient.Connect
     @Override
     public void onConnected(@Nullable Bundle bundle) {
         Log.d(TAG, "Google API client connected");
+//        String locationProvider = LocationManager.GPS_PROVIDER;
         mLocationRequest = new LocationRequest();
         mLocationRequest.setInterval(5000);
         mLocationRequest.setFastestInterval(500);
         mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+
 
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             // We should have permission as we ask for it at startup.

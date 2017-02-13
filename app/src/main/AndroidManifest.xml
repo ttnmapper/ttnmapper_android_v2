@@ -17,6 +17,9 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
 
+    <!-- Needed only if your app targets Android 5.0 (API level 21) or higher. -->
+    <uses-feature android:name="android.hardware.location.gps" />
+
     <application
         android:name=".MyApplication"
         android:allowBackup="true"
@@ -47,7 +50,8 @@
 
         <activity
             android:name=".MapsActivity"
-            android:label="TTN Mapper">
+            android:label="TTN Mapper"
+            android:launchMode="singleTask">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
