@@ -9,6 +9,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Paint;
@@ -34,8 +35,10 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.MapStyleOptions;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.PolylineOptions;
+import com.google.android.gms.maps.model.TileOverlayOptions;
 
 import java.util.ArrayList;
 
@@ -279,29 +282,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
     }
 
-//    @Override
-//    public boolean onCreateOptionsMenu(Menu menu) {
-//        MenuInflater inflater = getMenuInflater();
-//        inflater.inflate(R.menu.main_menu, menu);
-//        return true;
-//    }
-
-//    public boolean onOptionsItemSelected(MenuItem item) {
-//        // Handle item selection
-//        switch (item.getItemId()) {
-//            case R.id.device:
-//                Intent intent = new Intent(this, LinkDevice.class);
-//                startActivity(intent);
-//                return true;
-//            case R.id.settings:
-//                Intent intentSettings = new Intent(this, SettingsActivity.class);
-//                startActivity(intentSettings);
-//                return true;
-//            default:
-//                return super.onOptionsItemSelected(item);
-//        }
-//    }
-
     //toggle button to start/stop logging
     @Override
     public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
@@ -334,10 +314,10 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     public void setFABcolors() {
-        SharedPreferences myPrefs = this.getSharedPreferences("myPrefs", MODE_PRIVATE);
+        SharedPreferences myPrefs = this.getSharedPreferences(SettingConstants.PREFERENCES, MODE_PRIVATE);
 
         com.github.clans.fab.FloatingActionButton floatingActionButton = (com.github.clans.fab.FloatingActionButton) findViewById(R.id.fabItemScreenOn);
-        if (myPrefs.getBoolean("keepScreenOn", false)) {
+        if (myPrefs.getBoolean(SettingConstants.KEEP_SCREEN_ON, SettingConstants.KEEP_SCREEN_ON_DEFAULT)) {
             floatingActionButton.setColorNormalResId(R.color.fab_green_dark);
             floatingActionButton.setColorPressedResId(R.color.fab_green_light);
 
@@ -353,7 +333,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
 
         floatingActionButton = (com.github.clans.fab.FloatingActionButton) findViewById(R.id.fabItemAutoCenter);
-        if (myPrefs.getBoolean("autoCenter", true)) {
+        if (myPrefs.getBoolean(SettingConstants.AUTO_CENTER, SettingConstants.AUTO_CENTER_DEFAULT)) {
             floatingActionButton.setColorNormalResId(R.color.fab_green_dark);
             floatingActionButton.setColorPressedResId(R.color.fab_green_light);
             //Can be applied in runtime
@@ -365,10 +345,10 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
 
         floatingActionButton = (com.github.clans.fab.FloatingActionButton) findViewById(R.id.fabItemAutoZoom);
-        if (myPrefs.getBoolean("autoZoom", true)) {
+        if (myPrefs.getBoolean(SettingConstants.AUTO_ZOOM, SettingConstants.AUTO_ZOOM_DEFAULT)) {
             floatingActionButton.setColorNormalResId(R.color.fab_green_dark);
             floatingActionButton.setColorPressedResId(R.color.fab_green_light);
-            //TODO: zoom map once
+            //Initial zoom in onMapReady
         } else {
             floatingActionButton.setColorNormalResId(R.color.fab_red_dark);
             floatingActionButton.setColorPressedResId(R.color.fab_red_light);
@@ -377,7 +357,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
 
         floatingActionButton = (com.github.clans.fab.FloatingActionButton) findViewById(R.id.fabItemLordrive);
-        if (myPrefs.getBoolean("lordrivemode", true)) {
+        if (myPrefs.getBoolean(SettingConstants.LORDRIVE, SettingConstants.LORDRIVE_DEFAULT)) {
             floatingActionButton.setColorNormalResId(R.color.fab_green_dark);
             floatingActionButton.setColorPressedResId(R.color.fab_green_light);
             //Will be done at first packet received
@@ -389,21 +369,29 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
 
         floatingActionButton = (com.github.clans.fab.FloatingActionButton) findViewById(R.id.fabItemCoverage);
-        if (myPrefs.getBoolean("coverage", false)) {
+        if (myPrefs.getBoolean(SettingConstants.COVERAGE, SettingConstants.COVERAGE_DEFAULT)) {
             floatingActionButton.setColorNormalResId(R.color.fab_green_dark);
             floatingActionButton.setColorPressedResId(R.color.fab_green_light);
-            //TODO: add layer to map
+
+            //rile layer will be added in onMapReady
         } else {
             floatingActionButton.setColorNormalResId(R.color.fab_red_dark);
             floatingActionButton.setColorPressedResId(R.color.fab_red_light);
-            //TODO: remove layer from map
+
+            //Will be done in runtime
+
         }
     }
 
     public void onToggleScreen(View v) {
         com.github.clans.fab.FloatingActionButton floatingActionButton = (com.github.clans.fab.FloatingActionButton) v;
-        SharedPreferences myPrefs = this.getSharedPreferences("myPrefs", MODE_PRIVATE);
-        boolean previousState = myPrefs.getBoolean("keepScreenOn", false);
+        SharedPreferences myPrefs = this.getSharedPreferences(SettingConstants.PREFERENCES, MODE_PRIVATE);
+        boolean previousState = myPrefs.getBoolean(SettingConstants.KEEP_SCREEN_ON, SettingConstants.KEEP_SCREEN_ON_DEFAULT);
+
+        SharedPreferences.Editor prefsEditor = myPrefs.edit();
+        prefsEditor.putBoolean(SettingConstants.KEEP_SCREEN_ON, !previousState);
+        prefsEditor.apply();
+
         if (previousState) {
             floatingActionButton.setColorNormalResId(R.color.fab_red_dark);
             floatingActionButton.setColorPressedResId(R.color.fab_red_light);
@@ -417,15 +405,17 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             //It was off, now on
             getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         }
-        SharedPreferences.Editor prefsEditor = myPrefs.edit();
-        prefsEditor.putBoolean("keepScreenOn", !previousState);
-        prefsEditor.apply();
     }
 
     public void onToggleAutoCenter(View v) {
         com.github.clans.fab.FloatingActionButton floatingActionButton = (com.github.clans.fab.FloatingActionButton) v;
-        SharedPreferences myPrefs = this.getSharedPreferences("myPrefs", MODE_PRIVATE);
-        boolean previousState = myPrefs.getBoolean("autoCenter", false);
+        SharedPreferences myPrefs = this.getSharedPreferences(SettingConstants.PREFERENCES, MODE_PRIVATE);
+        boolean previousState = myPrefs.getBoolean(SettingConstants.AUTO_CENTER, SettingConstants.AUTO_CENTER_DEFAULT);
+
+        SharedPreferences.Editor prefsEditor = myPrefs.edit();
+        prefsEditor.putBoolean(SettingConstants.AUTO_CENTER, !previousState);
+        prefsEditor.apply();
+
         if (previousState) {
             floatingActionButton.setColorNormalResId(R.color.fab_red_dark);
             floatingActionButton.setColorPressedResId(R.color.fab_red_light);
@@ -437,15 +427,17 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
             //TODO: center map now
         }
-        SharedPreferences.Editor prefsEditor = myPrefs.edit();
-        prefsEditor.putBoolean("autoCenter", !previousState);
-        prefsEditor.apply();
     }
 
     public void onToggleAutoZoom(View v) {
         com.github.clans.fab.FloatingActionButton floatingActionButton = (com.github.clans.fab.FloatingActionButton) v;
-        SharedPreferences myPrefs = this.getSharedPreferences("myPrefs", MODE_PRIVATE);
-        boolean previousState = myPrefs.getBoolean("autoZoom", false);
+        SharedPreferences myPrefs = this.getSharedPreferences(SettingConstants.PREFERENCES, MODE_PRIVATE);
+        boolean previousState = myPrefs.getBoolean(SettingConstants.AUTO_ZOOM, SettingConstants.AUTO_ZOOM_DEFAULT);
+
+        SharedPreferences.Editor prefsEditor = myPrefs.edit();
+        prefsEditor.putBoolean(SettingConstants.AUTO_ZOOM, !previousState);
+        prefsEditor.apply();
+
         if (previousState) {
             floatingActionButton.setColorNormalResId(R.color.fab_red_dark);
             floatingActionButton.setColorPressedResId(R.color.fab_red_light);
@@ -457,49 +449,54 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
             //TODO: autozoom now
         }
-        SharedPreferences.Editor prefsEditor = myPrefs.edit();
-        prefsEditor.putBoolean("autoZoom", !previousState);
-        prefsEditor.apply();
     }
 
     public void onToggleLordrive(View v) {
         com.github.clans.fab.FloatingActionButton floatingActionButton = (com.github.clans.fab.FloatingActionButton) v;
-        SharedPreferences myPrefs = this.getSharedPreferences("myPrefs", MODE_PRIVATE);
-        boolean previousState = myPrefs.getBoolean("lordrivemode", false);
+        SharedPreferences myPrefs = this.getSharedPreferences(SettingConstants.PREFERENCES, MODE_PRIVATE);
+        boolean previousState = myPrefs.getBoolean(SettingConstants.LORDRIVE, SettingConstants.LORDRIVE_DEFAULT);
+
+        SharedPreferences.Editor prefsEditor = myPrefs.edit();
+        prefsEditor.putBoolean(SettingConstants.LORDRIVE, !previousState);
+        prefsEditor.apply();
+
         if (previousState) {
             floatingActionButton.setColorNormalResId(R.color.fab_red_dark);
             floatingActionButton.setColorPressedResId(R.color.fab_red_light);
 
-            //TODO: do a map redraw
+            clearAndReaddAllToMap();
         } else {
             floatingActionButton.setColorNormalResId(R.color.fab_green_dark);
             floatingActionButton.setColorPressedResId(R.color.fab_green_light);
 
-            //TODO: do a map redraw
+            clearAndReaddAllToMap();
         }
-        SharedPreferences.Editor prefsEditor = myPrefs.edit();
-        prefsEditor.putBoolean("lordrivemode", !previousState);
-        prefsEditor.apply();
     }
 
     public void onToggleCoverage(View v) {
         com.github.clans.fab.FloatingActionButton floatingActionButton = (com.github.clans.fab.FloatingActionButton) v;
-        SharedPreferences myPrefs = this.getSharedPreferences("myPrefs", MODE_PRIVATE);
-        boolean previousState = myPrefs.getBoolean("coverage", false);
+        SharedPreferences myPrefs = this.getSharedPreferences(SettingConstants.PREFERENCES, MODE_PRIVATE);
+        boolean previousState = myPrefs.getBoolean(SettingConstants.COVERAGE, SettingConstants.COVERAGE_DEFAULT);
+
+        SharedPreferences.Editor prefsEditor = myPrefs.edit();
+        prefsEditor.putBoolean(SettingConstants.COVERAGE, !previousState);
+        prefsEditor.apply();
+
         if (previousState) {
             floatingActionButton.setColorNormalResId(R.color.fab_red_dark);
             floatingActionButton.setColorPressedResId(R.color.fab_red_light);
 
-            //TODO: remove layer from map
+            clearAndReaddAllToMap();
         } else {
             floatingActionButton.setColorNormalResId(R.color.fab_green_dark);
             floatingActionButton.setColorPressedResId(R.color.fab_green_light);
 
-            //TODO: add layer to map
+            CoverageTileProvider mTileProvider = new CoverageTileProvider(256, 256, getString(R.string.ttnmapper_tms_url));
+            TileOverlayOptions options = new TileOverlayOptions();
+            options.tileProvider(mTileProvider);
+            options.transparency((float) 0.8);
+            mMap.addTileOverlay(options);
         }
-        SharedPreferences.Editor prefsEditor = myPrefs.edit();
-        prefsEditor.putBoolean("coverage", !previousState);
-        prefsEditor.apply();
     }
 
     public void onSettingsClicked(View v) {
@@ -535,7 +532,36 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
      */
     @Override
     public void onMapReady(GoogleMap googleMap) {
+
         mMap = googleMap;
+        try {
+            // Customise the styling of the base map using a JSON object defined
+            // in a raw resource file.
+            boolean success = googleMap.setMapStyle(
+                    MapStyleOptions.loadRawResourceStyle(
+                            this, R.raw.map_style));
+
+            if (!success) {
+                Log.e(TAG, "Style parsing failed.");
+            }
+        } catch (Resources.NotFoundException e) {
+            Log.e(TAG, "Can't find style. Error: ", e);
+        }
+
+        SharedPreferences myPrefs = this.getSharedPreferences(SettingConstants.PREFERENCES, MODE_PRIVATE);
+
+        if (myPrefs.getBoolean(SettingConstants.COVERAGE, SettingConstants.COVERAGE_DEFAULT)) {
+            CoverageTileProvider mTileProvider = new CoverageTileProvider(256, 256, getString(R.string.ttnmapper_tms_url));
+            TileOverlayOptions options = new TileOverlayOptions();
+            options.tileProvider(mTileProvider);
+            options.transparency((float) 0.8);
+
+            mMap.addTileOverlay(options);
+        }
+
+        if (myPrefs.getBoolean(SettingConstants.AUTO_ZOOM, SettingConstants.AUTO_ZOOM_DEFAULT)) {
+            //TODO: We should save the previous viewport location and zoom to that on startup
+        }
     }
 
     private boolean isMyServiceRunning(Class<?> serviceClass) {
@@ -610,19 +636,41 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     public void clearAndReaddAllToMap() {
+        MyApplication mApplication = (MyApplication) getApplicationContext();
+        SharedPreferences myPrefs = this.getSharedPreferences(SettingConstants.PREFERENCES, MODE_PRIVATE);
 
+        mMap.clear();
+        gatewaysWithMarkers.clear();
+
+        for (Packet packet : mApplication.packets) {
+            addMeasurementMarker(packet);
+
+            if (myPrefs.getBoolean(SettingConstants.LORDRIVE, SettingConstants.LORDRIVE_DEFAULT)) {
+                addMeasurementLine(packet);
+                addGateway(packet);
+            }
+        }
+
+        if (myPrefs.getBoolean(SettingConstants.COVERAGE, SettingConstants.COVERAGE_DEFAULT)) {
+            CoverageTileProvider mTileProvider = new CoverageTileProvider(256, 256, getString(R.string.ttnmapper_tms_url));
+            TileOverlayOptions options = new TileOverlayOptions();
+            options.tileProvider(mTileProvider);
+            options.transparency((float) 0.8);
+            mMap.addTileOverlay(options);
+        }
     }
 
     public void addLastMeasurementToMap() {
         if (mMap == null) return;
 
+        SharedPreferences myPrefs = this.getSharedPreferences(SettingConstants.PREFERENCES, MODE_PRIVATE);
         MyApplication mApplication = (MyApplication) getApplicationContext();
         if (mApplication.lastPacket == null) return;
 
         Packet packet = mApplication.lastPacket;
         addMeasurementMarker(packet);
 
-        if (mApplication.isLordriveMode()) {
+        if (myPrefs.getBoolean(SettingConstants.LORDRIVE, SettingConstants.LORDRIVE_DEFAULT)) {
             addMeasurementLine(packet);
             addGateway(packet);
         }

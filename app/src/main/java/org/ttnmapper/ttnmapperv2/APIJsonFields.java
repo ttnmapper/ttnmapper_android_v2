@@ -61,6 +61,7 @@ public final class APIJsonFields {
         public final static String PORT = "port";
         public final static String COUNTER = "counter";
         public final static String PAYLOAD = "payload_raw";
+        public final static String METADATA = "metadata";
     }
 
     public final static class TTNMetadata {
@@ -69,6 +70,7 @@ public final class APIJsonFields {
         public final static String MODULATION = "modulation";
         public final static String DATA_RATE = "data_rate";
         public final static String CODING_RATE = "coding_rate";
+        public final static String GATEWAYS = "gateways";
     }
 
     public final static class TTNGateway {

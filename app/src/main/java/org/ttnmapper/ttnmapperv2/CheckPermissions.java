@@ -42,7 +42,7 @@ public class CheckPermissions extends AppCompatActivity implements ActivityCompa
     public boolean checkAndSetPermissions() {
         boolean allPermissionsGranted = true;
 
-        SharedPreferences myPrefs = this.getSharedPreferences("myPrefs", MODE_PRIVATE);
+        SharedPreferences myPrefs = this.getSharedPreferences(SettingConstants.PREFERENCES, MODE_PRIVATE);
 
         if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             allPermissionsGranted = false;
@@ -70,7 +70,7 @@ public class CheckPermissions extends AppCompatActivity implements ActivityCompa
             button.setEnabled(false);
         }
 
-        if (myPrefs.getBoolean("savefile", true) && ActivityCompat.checkSelfPermission(this, android.Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+        if (myPrefs.getBoolean(SettingConstants.SAVE_TO_FILE, true) && ActivityCompat.checkSelfPermission(this, android.Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
             allPermissionsGranted = false;
             TextView textView = (TextView) findViewById(R.id.textViewPermissionFile);
             textView.setText("No");

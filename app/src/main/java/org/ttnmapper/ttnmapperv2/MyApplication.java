@@ -57,9 +57,6 @@ public class MyApplication extends Application {
     private double latestLon = 0;
     private double latestAlt = 0;
     private double latestAcc = 0;
-    private boolean lordriveMode = true;
-    private boolean autoCenter = true;
-    private boolean autoZoom = true;
     private String latestProvider = "none";
     private OkHttpClient httpClient = new OkHttpClient();
 
@@ -67,50 +64,26 @@ public class MyApplication extends Application {
         return singleton;
     }
 
-    public boolean isLordriveMode() {
-        return lordriveMode;
-    }
-
-    public void setLordriveMode(boolean lordriveMode) {
-        this.lordriveMode = lordriveMode;
-    }
-
-    public boolean isAutoCenter() {
-        return autoCenter;
-    }
-
-    public void setAutoCenter(boolean autoCenter) {
-        this.autoCenter = autoCenter;
-    }
-
-    public boolean isAutoZoom() {
-        return autoZoom;
-    }
-
-    public void setAutoZoom(boolean autoZoom) {
-        this.autoZoom = autoZoom;
-    }
-
     @Override
     public void onCreate() {
         super.onCreate();
         singleton = this;
 
-        SharedPreferences myPrefs = getSharedPreferences("myPrefs", MODE_PRIVATE);
-        ttnApplicationId = myPrefs.getString("ttnApplicationId", "");
-        ttnDeviceId = myPrefs.getString("ttnDeviceId", "");
-        ttnAccessKey = myPrefs.getString("ttnAccessKey", "");
-        ttnBroker = myPrefs.getString("ttnBroker", "");
+        SharedPreferences myPrefs = getSharedPreferences(SettingConstants.PREFERENCES, MODE_PRIVATE);
+        ttnApplicationId = myPrefs.getString(SettingConstants.TTN_APPLICATION_ID, "");
+        ttnDeviceId = myPrefs.getString(SettingConstants.TTN_DEVICE_ID, "");
+        ttnAccessKey = myPrefs.getString(SettingConstants.TTN_ACCESS_KEY, "");
+        ttnBroker = myPrefs.getString(SettingConstants.TTN_BROKER, "");
 
-        shouldUpload = myPrefs.getBoolean("shouldUpload", true);
-        isExperiment = myPrefs.getBoolean("isExperiment", false);
-        saveToFile = myPrefs.getBoolean("saveToFile", true);
+        shouldUpload = myPrefs.getBoolean(SettingConstants.SHOULD_UPLOAD, SettingConstants.SHOULD_UPLOAD_DEFAULT);
+        isExperiment = myPrefs.getBoolean(SettingConstants.IS_EXPERIMENT, SettingConstants.IS_EXPERIMENT_DEFAULT);
+        saveToFile = myPrefs.getBoolean(SettingConstants.SAVE_TO_FILE, SettingConstants.SAVE_TO_FILE_DEFAULT);
 
         TimeZone tz = TimeZone.getTimeZone("UTC");
         DateFormat df = new SimpleDateFormat("yyyyMMddHHmm", Locale.ENGLISH); // Quoted "Z" to indicate UTC, no timezone offset
         df.setTimeZone(tz);
         String nowAsISO = df.format(new Date());
-        experimentName = myPrefs.getString("experimentName", "experiment_" + nowAsISO);
+        experimentName = myPrefs.getString(SettingConstants.EXPERIMENT_NAME, "experiment_" + nowAsISO);
         fileName = "ttnmapper-" + nowAsISO + ".log";
     }
 
@@ -135,9 +108,9 @@ public class MyApplication extends Application {
 
     public void setTtnApplicationId(String ttnApplicationId) {
         this.ttnApplicationId = ttnApplicationId;
-        SharedPreferences myPrefs = this.getSharedPreferences("myPrefs", MODE_PRIVATE);
+        SharedPreferences myPrefs = this.getSharedPreferences(SettingConstants.PREFERENCES, MODE_PRIVATE);
         SharedPreferences.Editor prefsEditor = myPrefs.edit();
-        prefsEditor.putString("ttnApplicationId", ttnApplicationId);
+        prefsEditor.putString(SettingConstants.TTN_APPLICATION_ID, ttnApplicationId);
         prefsEditor.apply();
     }
 
@@ -147,9 +120,9 @@ public class MyApplication extends Application {
 
     public void setTtnDeviceId(String ttnDeviceId) {
         this.ttnDeviceId = ttnDeviceId;
-        SharedPreferences myPrefs = this.getSharedPreferences("myPrefs", MODE_PRIVATE);
+        SharedPreferences myPrefs = this.getSharedPreferences(SettingConstants.PREFERENCES, MODE_PRIVATE);
         SharedPreferences.Editor prefsEditor = myPrefs.edit();
-        prefsEditor.putString("ttnDeviceId", ttnDeviceId);
+        prefsEditor.putString(SettingConstants.TTN_DEVICE_ID, ttnDeviceId);
         prefsEditor.apply();
     }
 
@@ -159,9 +132,9 @@ public class MyApplication extends Application {
 
     public void setTtnAccessKey(String ttnAccessKey) {
         this.ttnAccessKey = ttnAccessKey;
-        SharedPreferences myPrefs = this.getSharedPreferences("myPrefs", MODE_PRIVATE);
+        SharedPreferences myPrefs = this.getSharedPreferences(SettingConstants.PREFERENCES, MODE_PRIVATE);
         SharedPreferences.Editor prefsEditor = myPrefs.edit();
-        prefsEditor.putString("ttnAccessKey", ttnAccessKey);
+        prefsEditor.putString(SettingConstants.TTN_ACCESS_KEY, ttnAccessKey);
         prefsEditor.apply();
     }
 
@@ -171,9 +144,9 @@ public class MyApplication extends Application {
 
     public void setTtnBroker(String ttnBroker) {
         this.ttnBroker = ttnBroker;
-        SharedPreferences myPrefs = this.getSharedPreferences("myPrefs", MODE_PRIVATE);
+        SharedPreferences myPrefs = this.getSharedPreferences(SettingConstants.PREFERENCES, MODE_PRIVATE);
         SharedPreferences.Editor prefsEditor = myPrefs.edit();
-        prefsEditor.putString("ttnBroker", ttnBroker);
+        prefsEditor.putString(SettingConstants.TTN_BROKER, ttnBroker);
         prefsEditor.apply();
     }
 
@@ -183,9 +156,9 @@ public class MyApplication extends Application {
 
     public void setShouldUpload(boolean shouldUpload) {
         this.shouldUpload = shouldUpload;
-        SharedPreferences myPrefs = this.getSharedPreferences("myPrefs", MODE_PRIVATE);
+        SharedPreferences myPrefs = this.getSharedPreferences(SettingConstants.PREFERENCES, MODE_PRIVATE);
         SharedPreferences.Editor prefsEditor = myPrefs.edit();
-        prefsEditor.putBoolean("shouldUpload", shouldUpload);
+        prefsEditor.putBoolean(SettingConstants.SHOULD_UPLOAD, shouldUpload);
         prefsEditor.apply();
     }
 
@@ -195,9 +168,9 @@ public class MyApplication extends Application {
 
     public void setExperiment(boolean experiment) {
         isExperiment = experiment;
-        SharedPreferences myPrefs = this.getSharedPreferences("myPrefs", MODE_PRIVATE);
+        SharedPreferences myPrefs = this.getSharedPreferences(SettingConstants.PREFERENCES, MODE_PRIVATE);
         SharedPreferences.Editor prefsEditor = myPrefs.edit();
-        prefsEditor.putBoolean("isExperiment", isExperiment);
+        prefsEditor.putBoolean(SettingConstants.IS_EXPERIMENT, isExperiment);
         prefsEditor.apply();
     }
 
@@ -207,9 +180,9 @@ public class MyApplication extends Application {
 
     public void setExperimentName(String experimentName) {
         this.experimentName = experimentName;
-        SharedPreferences myPrefs = this.getSharedPreferences("myPrefs", MODE_PRIVATE);
+        SharedPreferences myPrefs = this.getSharedPreferences(SettingConstants.PREFERENCES, MODE_PRIVATE);
         SharedPreferences.Editor prefsEditor = myPrefs.edit();
-        prefsEditor.putString("experimentName", experimentName);
+        prefsEditor.putString(SettingConstants.EXPERIMENT_NAME, experimentName);
         prefsEditor.apply();
     }
 
@@ -259,9 +232,9 @@ public class MyApplication extends Application {
 
     public void setSaveToFile(boolean saveToFile) {
         this.saveToFile = saveToFile;
-        SharedPreferences myPrefs = this.getSharedPreferences("myPrefs", MODE_PRIVATE);
+        SharedPreferences myPrefs = this.getSharedPreferences(SettingConstants.PREFERENCES, MODE_PRIVATE);
         SharedPreferences.Editor prefsEditor = myPrefs.edit();
-        prefsEditor.putBoolean("saveToFile", saveToFile);
+        prefsEditor.putBoolean(SettingConstants.SAVE_TO_FILE, saveToFile);
         prefsEditor.apply();
     }
 
@@ -299,8 +272,8 @@ public class MyApplication extends Application {
 
         try {
             JSONObject packetData = new JSONObject(payload);
-            JSONObject metadata = packetData.getJSONObject("metadata");
-            JSONArray gateways = metadata.getJSONArray("gateways");
+            JSONObject metadata = packetData.getJSONObject(APIJsonFields.TTNPacket.METADATA);
+            JSONArray gateways = metadata.getJSONArray(APIJsonFields.TTNMetadata.GATEWAYS);
 
             Packet packet = new Packet();
             packet.setAppID(packetData.getString(APIJsonFields.TTNPacket.APPID));

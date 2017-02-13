@@ -204,7 +204,7 @@ public class TTNMapperService extends Service implements GoogleApiClient.Connect
                         sendNotification("Last packet received at:\n" + (new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.ENGLISH).format(new Date())));
                     } else {
                         Log.d(TAG, "Packet received, GPS location unknown");
-                        sendNotification("Packet received, but location of phone is still unknown.");
+                        sendNotification("Packet received, but location of phone is still unknown.\n" + (new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.ENGLISH).format(new Date())));
                     }
                 }
 
