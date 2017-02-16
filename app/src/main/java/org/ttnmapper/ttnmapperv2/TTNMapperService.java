@@ -54,6 +54,8 @@ public class TTNMapperService extends Service implements GoogleApiClient.Connect
     private GoogleApiClient mGoogleApiClient;
     private LocationRequest mLocationRequest;
     private int reconnectCounter = 0;
+    private boolean reconnectPending = false;
+    private boolean shouldExit = false;
 
     @Override
     public IBinder onBind(Intent intent) {
@@ -80,6 +82,8 @@ public class TTNMapperService extends Service implements GoogleApiClient.Connect
     @Override
     public void onDestroy() {
         Log.d(TAG, "onDestroy");
+
+        shouldExit = true;
 
         mGoogleApiClient.disconnect();
 
@@ -119,8 +123,13 @@ public class TTNMapperService extends Service implements GoogleApiClient.Connect
         mApplication.setLatestAcc(0.0);
         mApplication.setLatestProvider("");
 
-        //start mqtt
-        mqtt_connect();
+        handler.post(new Runnable() {
+            @Override
+            public void run() {
+                //start mqtt
+                mqtt_connect();
+            }
+        });
 
         return START_STICKY;
     }
@@ -143,7 +152,7 @@ public class TTNMapperService extends Service implements GoogleApiClient.Connect
         LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
 
         if (mqttClient != null) {
-            if (!mqttClient.isConnected()) {
+            if (!mqttClient.isConnected() && !reconnectPending && !shouldExit) {
                 mqtt_connect();
             }
         }
@@ -159,6 +168,9 @@ public class TTNMapperService extends Service implements GoogleApiClient.Connect
     }
 
     void stopThisService(String reason) {
+
+        shouldExit = true;
+
         mqtt_disconnect();
         stopSelf();
 
@@ -188,19 +200,25 @@ public class TTNMapperService extends Service implements GoogleApiClient.Connect
                 public void connectionLost(final Throwable cause) {
                     Log.d(TAG, "mqtt connection lost");
                     // should reconnect automatically
+//                    logErrorToFile("mqtt conenction lost");
 
                     if (reconnectCounter < 10) {
-                        reconnectCounter++;
-                        handler.postDelayed(new Runnable() {
-                            @Override
-                            public void run() {
-                                //Do something after 100ms
-                                Log.d(TAG, "Should restart MQTT now");
-                                mqtt_connect();
-                            }
-                        }, 10000);
+                        if (!reconnectPending && !shouldExit) {
+                            reconnectCounter++;
+                            sendNotification("MQTT reconnect retry " + reconnectCounter + "/10");
+                            handler.postDelayed(new Runnable() {
+                                @Override
+                                public void run() {
+                                    //Do something after 100ms
+                                    Log.d(TAG, "Should restart MQTT now");
+                                    reconnectPending = false;
+                                    mqtt_connect();
+                                }
+                            }, 10000);
+                            reconnectPending = true;
+                        }
                     } else {
-                        stopThisService("Can not reconnect MQTT");
+                        stopThisService("MQTT connection failed");
                     }
                 }
 
@@ -209,16 +227,16 @@ public class TTNMapperService extends Service implements GoogleApiClient.Connect
                     reconnectCounter = 0;
 
                     MyApplication mApplication = (MyApplication) getApplicationContext();
+                    mApplication.logPacket(topic, message.toString());
 
                     if (mApplication.getLatestAcc() > 20) {
                         Log.d(TAG, "Packet received, GPS not accurate enough " + message.toString());
                         Log.d(TAG, message.isDuplicate() + "");
-                        sendNotification("Packet received, but location of phone is not accurate enough (>10m). Try going outside.\nCurrent accuracy: " +
+                        sendNotification("Packet received, but location of phone is not accurate enough (>20m). Try going outside.\nCurrent accuracy: " +
                                 (Math.round(mApplication.getLatestAcc() * 100) / 100) + " metres\n" +
                                 (new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.ENGLISH).format(new Date())));
                     } else if (mApplication.getLatestLat() != 0 && mApplication.getLatestLon() != 0) {
                         Log.d(TAG, "Packet received, logging");
-                        mApplication.logPacket(topic, message.toString());
 
                         // after logging the packet, let the activity know to refresh
                         Intent intent = new Intent("ttn-mapper-service-event");
@@ -244,10 +262,62 @@ public class TTNMapperService extends Service implements GoogleApiClient.Connect
             Log.d(TAG, "MQTT subscribed to topic: " + mqttTopic);
 
         } catch (MqttException e) {
+            Log.d(TAG, "MQTT Exception in mqtt connect");
+//            logErrorToFile("MQTT Exception in mqtt_connect");
             e.printStackTrace();
-            stopThisService("MQTT connection error");
+
+            if (reconnectCounter < 10) {
+                if (!reconnectPending && !shouldExit) {
+                    reconnectCounter++;
+                    sendNotification("MQTT reconnect retry " + reconnectCounter + "/10");
+                    handler.postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            //Do something after 100ms
+                            Log.d(TAG, "Should restart MQTT now");
+                            reconnectPending = false;
+                            mqtt_connect();
+                        }
+                    }, 10000);
+                    reconnectPending = true;
+                }
+            } else {
+                stopThisService("MQTT connection failed");
+            }
         }
     }
+
+//    public void logErrorToFile(String error)
+//    {
+//        try
+//        {
+//            TimeZone tz = TimeZone.getTimeZone("UTC");
+//            DateFormat df = new SimpleDateFormat("yyyyMMddHHmm", Locale.ENGLISH); // Quoted "Z" to indicate UTC, no timezone offset
+//            df.setTimeZone(tz);
+//            String nowAsISO = df.format(new Date());
+//
+//            // Find the root of the external storage.
+//            // See http://developer.android.com/guide/topics/data/data-storage.html#filesExternal
+//            File root = android.os.Environment.getExternalStorageDirectory();
+//
+//            // See http://stackoverflow.com/questions/3551821/android-write-to-sd-card-folder
+//            File dir = new File(root.getAbsolutePath() + "/ttnmapper_logs");
+//            dir.mkdirs();
+//            File file = new File(dir, "error_log");
+//
+//            final FileOutputStream f = new FileOutputStream(file, true);
+//            final PrintWriter pw = new PrintWriter(f);
+//            pw.println(nowAsISO+" "+error);
+//
+//            pw.flush();
+//            pw.close();
+//            f.close();
+//        } catch (FileNotFoundException e) {
+//            e.printStackTrace();
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
+//    }
 
     public void mqtt_disconnect() {
         if (mqttClient != null) {

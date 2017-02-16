@@ -265,7 +265,11 @@ public class MyApplication extends Application {
     public void logPacket(String topic, String payload) {
         Log.d(TAG, "Logging rx packet");
 
-        if (latestLat == 0 || latestLon == 0) {
+        if (saveToFile) {
+            saveMeasurementToFile(topic, payload);
+        }
+
+        if (latestLat == 0 || latestLon == 0 || latestAcc > 20) {
             //we do not know our location yet
             return;
         }
@@ -297,16 +301,26 @@ public class MyApplication extends Application {
                 JSONObject gatewayFromJson = gateways.getJSONObject(i);
 
                 Gateway gatewayToSave = new Gateway();
+                //without an id it is useless, so we will error out
                 gatewayToSave.setGatewayID(gatewayFromJson.getString(APIJsonFields.TTNGateway.ID));
-                gatewayToSave.setTimestamp(gatewayFromJson.getString(APIJsonFields.TTNGateway.TIMESTAMP));
-                gatewayToSave.setTime(gatewayFromJson.getString(APIJsonFields.TTNGateway.TIME));
-                gatewayToSave.setChannel(gatewayFromJson.getInt(APIJsonFields.TTNGateway.CHANNEL));
-                gatewayToSave.setRssi(gatewayFromJson.getDouble(APIJsonFields.TTNGateway.RSSI));
-                gatewayToSave.setSnr(gatewayFromJson.getDouble(APIJsonFields.TTNGateway.SNR));
-                gatewayToSave.setRfChain(gatewayFromJson.getInt(APIJsonFields.TTNGateway.RFCHAIN));
-                gatewayToSave.setLatitude(gatewayFromJson.getDouble(APIJsonFields.TTNGateway.LATITUDE));
-                gatewayToSave.setLongitude(gatewayFromJson.getDouble(APIJsonFields.TTNGateway.LONGITUDE));
-                gatewayToSave.setAltitude(gatewayFromJson.getDouble(APIJsonFields.TTNGateway.ALTITUDE));
+                if (gatewayFromJson.has(APIJsonFields.TTNGateway.TIMESTAMP))
+                    gatewayToSave.setTimestamp(gatewayFromJson.getString(APIJsonFields.TTNGateway.TIMESTAMP));
+                if (gatewayFromJson.has(APIJsonFields.TTNGateway.TIME))
+                    gatewayToSave.setTime(gatewayFromJson.getString(APIJsonFields.TTNGateway.TIME));
+                if (gatewayFromJson.has(APIJsonFields.TTNGateway.CHANNEL))
+                    gatewayToSave.setChannel(gatewayFromJson.getInt(APIJsonFields.TTNGateway.CHANNEL));
+                if (gatewayFromJson.has(APIJsonFields.TTNGateway.RSSI))
+                    gatewayToSave.setRssi(gatewayFromJson.getDouble(APIJsonFields.TTNGateway.RSSI));
+                if (gatewayFromJson.has(APIJsonFields.TTNGateway.SNR))
+                    gatewayToSave.setSnr(gatewayFromJson.getDouble(APIJsonFields.TTNGateway.SNR));
+                if (gatewayFromJson.has(APIJsonFields.TTNGateway.RFCHAIN))
+                    gatewayToSave.setRfChain(gatewayFromJson.getInt(APIJsonFields.TTNGateway.RFCHAIN));
+                if (gatewayFromJson.has(APIJsonFields.TTNGateway.LATITUDE))
+                    gatewayToSave.setLatitude(gatewayFromJson.getDouble(APIJsonFields.TTNGateway.LATITUDE));
+                if (gatewayFromJson.has(APIJsonFields.TTNGateway.LONGITUDE))
+                    gatewayToSave.setLongitude(gatewayFromJson.getDouble(APIJsonFields.TTNGateway.LONGITUDE));
+                if (gatewayFromJson.has(APIJsonFields.TTNGateway.ALTITUDE))
+                    gatewayToSave.setAltitude(gatewayFromJson.getDouble(APIJsonFields.TTNGateway.ALTITUDE));
 
                 packet.addGateway(gatewayToSave);
             }
@@ -316,9 +330,6 @@ public class MyApplication extends Application {
             if (shouldUpload) {
                 uploadMeasurement(packet);
             }
-            if (saveToFile) {
-                saveMeasurementToFile(packet);
-            }
 
         } catch (JSONException e) {
             e.printStackTrace();
@@ -326,10 +337,8 @@ public class MyApplication extends Application {
         }
     }
 
-    private void saveMeasurementToFile(Packet packet) {
+    private void saveMeasurementToFile(String topic, String payload) {
         Log.d(TAG, "Saving to file");
-
-        //TODO: Maybe we can serialize the packet object directly and save that to the file
 
         try {
             // Find the root of the external storage.
@@ -344,45 +353,36 @@ public class MyApplication extends Application {
             final FileOutputStream f = new FileOutputStream(file, true);
             final PrintWriter pw = new PrintWriter(f);
 
-            for (Gateway gateway : packet.getGateways()) {
+            JSONObject payloadJson = new JSONObject(); //empty json object in case the parsing fails
+            try {
+                payloadJson = new JSONObject(payload);
+                payloadJson.put("mqtt_topic", topic);
 
-                JSONObject toPost = new JSONObject();
+                payloadJson.put("phone_lat", latestLat);
+                payloadJson.put("phone_lon", latestLon);
+                payloadJson.put("phone_alt", latestAlt);
+                payloadJson.put("phone_loc_acc", latestAcc);
+                payloadJson.put("phone_loc_provider", latestProvider);
 
-                try {
-                    toPost.put(APIJsonFields.MapperPacket.TIME, packet.getTime());
-                    toPost.put(APIJsonFields.MapperPacket.DEVID, packet.getDeviceID());
-                    toPost.put(APIJsonFields.MapperPacket.APPID, packet.getAppID());
-                    toPost.put(APIJsonFields.MapperPacket.GTWID, gateway.getGatewayID());
-                    toPost.put(APIJsonFields.MapperPacket.RSSI, gateway.getRssi());
-                    toPost.put(APIJsonFields.MapperPacket.SNR, gateway.getSnr());
-                    toPost.put(APIJsonFields.MapperPacket.MODULATION, packet.getModulation());
-                    toPost.put(APIJsonFields.MapperPacket.FREQUENCY, packet.getFrequency());
-                    toPost.put(APIJsonFields.MapperPacket.DATA_RATE, packet.getDataRate());
-                    toPost.put(APIJsonFields.MapperPacket.CODING_RATE, packet.getCodingRate());
-                    toPost.put(APIJsonFields.MapperPacket.LATITUDE, packet.getLatitude());
-                    toPost.put(APIJsonFields.MapperPacket.LONGITUDE, packet.getLongitude());
-                    toPost.put(APIJsonFields.MapperPacket.ALTITUDE, packet.getAltitude());
-                    toPost.put(APIJsonFields.MapperPacket.ACCURACY, packet.getAccuracy());
-                    toPost.put(APIJsonFields.MapperPacket.PROVIDER, packet.getProvider());
-                    toPost.put(APIJsonFields.MapperPacket.MQTT_TOPIC, packet.getMqttTopic());
-                    toPost.put(APIJsonFields.MapperPacket.INSTANCE_ID, InstanceID.getInstance(getApplicationContext()).getId());
+                DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.ENGLISH); // Quoted "Z" to indicate UTC, no timezone offset
+                df.setTimeZone(TimeZone.getTimeZone("UTC"));
+                String nowAsISO = df.format(new Date());
+                payloadJson.put("phone_time", nowAsISO);
 
-                    //set the app instance ID (https://developers.google.com/instance-id/)
-                    final PackageInfo pInfo = getPackageManager().getPackageInfo(getPackageName(), 0);
-                    final String version = pInfo.versionName;
-                    int verCode = pInfo.versionCode;
-                    try {
-                        toPost.put(APIJsonFields.MapperPacket.USER_AGENT, "Android" + android.os.Build.VERSION.RELEASE + " App" + verCode + ":" + version);
-                    } catch (JSONException e) {
-                        e.printStackTrace();
-                    }
+                //set the app instance ID (https://developers.google.com/instance-id/)
+                final PackageInfo pInfo = getPackageManager().getPackageInfo(getPackageName(), 0);
+                final String version = pInfo.versionName;
+                int verCode = pInfo.versionCode;
+                payloadJson.put(APIJsonFields.MapperPacket.USER_AGENT, "Android" + android.os.Build.VERSION.RELEASE + " App" + verCode + ":" + version);
 
-                } catch (JSONException | PackageManager.NameNotFoundException e) {
-                    e.printStackTrace();
-                }
-
-                pw.println(toPost.toString());
+            } catch (JSONException e) {
+                e.printStackTrace();
+            } catch (PackageManager.NameNotFoundException e) {
+                e.printStackTrace();
             }
+            pw.println(payloadJson.toString());
+            Log.d(TAG, "Line written: " + payloadJson.toString());
+
             pw.flush();
             pw.close();
             f.close();
