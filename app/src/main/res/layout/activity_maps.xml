@@ -28,15 +28,25 @@
             android:layout_height="wrap_content"
             android:layout_gravity="end"
             android:gravity="end"
-            android:orientation="horizontal">
+            android:orientation="horizontal"
+            android:padding="15dp">
 
-
-            <ToggleButton
-                android:id="@+id/toggleButtonStartLogging"
+            <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textOff="Logging Off"
-                android:textOn="Logging On" />
+                android:background="@drawable/toggle_background"
+                android:paddingLeft="10dp"
+                android:paddingStart="10dp">
+
+                <android.support.v7.widget.SwitchCompat
+                    android:id="@+id/switchStartLogging"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Mapping"
+                    android:textStyle="bold"
+                    android:theme="@style/SCBSwitch" />
+
+            </LinearLayout>
 
         </LinearLayout>
     </LinearLayout>
@@ -59,8 +69,12 @@
         android:layout_alignParentBottom="true"
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true"
+        android:paddingBottom="10dp"
+        android:paddingLeft="10dp"
+        android:paddingStart="10dp"
         fab:menu_colorNormal="@color/fab_blue_dark"
         fab:menu_colorPressed="@color/fab_blue_light"
+        fab:menu_fab_size="mini"
         fab:menu_icon="@drawable/ic_more_vert_white_24dp"
         fab:menu_labels_hideAnimation="@anim/fab_slide_out_to_left"
         fab:menu_labels_position="right"
@@ -104,7 +118,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:onClick="onToggleLordrive"
-            android:src="@drawable/gateway_dot"
+            android:src="@drawable/gateway_dot_white"
             fab:fab_colorNormal="#D84315"
             fab:fab_colorPressed="#E64A19"
             fab:fab_label="LoRdrive mode"

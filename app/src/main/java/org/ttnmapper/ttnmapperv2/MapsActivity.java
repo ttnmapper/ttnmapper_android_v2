@@ -23,13 +23,13 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.SwitchCompat;
 import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.CompoundButton;
 import android.widget.TextView;
 import android.widget.Toast;
-import android.widget.ToggleButton;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
@@ -88,7 +88,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             mBound = true;
 
             //disable toggle button until service is bound
-            ToggleButton toggleButton = (ToggleButton) findViewById(R.id.toggleButtonStartLogging);
+            SwitchCompat toggleButton = (SwitchCompat) findViewById(R.id.switchStartLogging);
             toggleButton.setEnabled(true);
         }
 
@@ -98,7 +98,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             mBound = false;
 
             //disable toggle button until service is bound
-            ToggleButton toggleButton = (ToggleButton) findViewById(R.id.toggleButtonStartLogging);
+            SwitchCompat toggleButton = (SwitchCompat) findViewById(R.id.switchStartLogging);
             toggleButton.setEnabled(true);
         }
     };
@@ -122,7 +122,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 case "selfstop":
                     Log.d(TAG, "Received selfstop from service.");
                     stopLoggingService();
-                    ToggleButton toggleButton = (ToggleButton) findViewById(R.id.toggleButtonStartLogging);
+                    SwitchCompat toggleButton = (SwitchCompat) findViewById(R.id.switchStartLogging);
                     toggleButton.setChecked(false);
 
                     if (payloadData == null) {
@@ -158,7 +158,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
 
         //logging button
-        ToggleButton toggleButton = (ToggleButton) findViewById(R.id.toggleButtonStartLogging);
+        SwitchCompat toggleButton = (SwitchCompat) findViewById(R.id.switchStartLogging);
 
         //second the listener
         toggleButton.setOnCheckedChangeListener(this);
@@ -241,7 +241,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
 
         //logging button
-        ToggleButton toggleButton = (ToggleButton) findViewById(R.id.toggleButtonStartLogging);
+        SwitchCompat toggleButton = (SwitchCompat) findViewById(R.id.switchStartLogging);
         if (isMyServiceRunning(TTNMapperService.class)) {
             setStatusMessage("Logging in progress.");
             toggleButton.setChecked(true);
@@ -292,7 +292,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     //toggle button to start/stop logging
     @Override
     public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-        if (buttonView.getId() == R.id.toggleButtonStartLogging) {
+        if (buttonView.getId() == R.id.switchStartLogging) {
             if (isChecked) {
                 MyApplication mApplication = (MyApplication) getApplicationContext();
                 if (mApplication.isConfigured()) {
@@ -331,8 +331,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             //Set on
             getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         } else {
-            floatingActionButton.setColorNormalResId(R.color.fab_red_dark);
-            floatingActionButton.setColorPressedResId(R.color.fab_red_light);
+            floatingActionButton.setColorNormalResId(R.color.fab_disabled);
+            floatingActionButton.setColorPressedResId(R.color.fab_disabled_pressed);
 
             //Set off
             getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
@@ -345,8 +345,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             floatingActionButton.setColorPressedResId(R.color.fab_green_light);
             //Can be applied in runtime
         } else {
-            floatingActionButton.setColorNormalResId(R.color.fab_red_dark);
-            floatingActionButton.setColorPressedResId(R.color.fab_red_light);
+            floatingActionButton.setColorNormalResId(R.color.fab_disabled);
+            floatingActionButton.setColorPressedResId(R.color.fab_disabled_pressed);
             //Can be applied in runtime
         }
 
@@ -357,8 +357,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             floatingActionButton.setColorPressedResId(R.color.fab_green_light);
             //Initial zoom in onMapReady
         } else {
-            floatingActionButton.setColorNormalResId(R.color.fab_red_dark);
-            floatingActionButton.setColorPressedResId(R.color.fab_red_light);
+            floatingActionButton.setColorNormalResId(R.color.fab_disabled);
+            floatingActionButton.setColorPressedResId(R.color.fab_disabled_pressed);
             //Just do not zoom anymore. Runtime.
         }
 
@@ -369,8 +369,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             floatingActionButton.setColorPressedResId(R.color.fab_green_light);
             //Will be done at first packet received
         } else {
-            floatingActionButton.setColorNormalResId(R.color.fab_red_dark);
-            floatingActionButton.setColorPressedResId(R.color.fab_red_light);
+            floatingActionButton.setColorNormalResId(R.color.fab_disabled);
+            floatingActionButton.setColorPressedResId(R.color.fab_disabled_pressed);
             //Will be done in runtime
         }
 
@@ -382,8 +382,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
             //rile layer will be added in onMapReady
         } else {
-            floatingActionButton.setColorNormalResId(R.color.fab_red_dark);
-            floatingActionButton.setColorPressedResId(R.color.fab_red_light);
+            floatingActionButton.setColorNormalResId(R.color.fab_disabled);
+            floatingActionButton.setColorPressedResId(R.color.fab_disabled_pressed);
 
             //Will be done in runtime
 
@@ -400,8 +400,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         prefsEditor.apply();
 
         if (previousState) {
-            floatingActionButton.setColorNormalResId(R.color.fab_red_dark);
-            floatingActionButton.setColorPressedResId(R.color.fab_red_light);
+            floatingActionButton.setColorNormalResId(R.color.fab_disabled);
+            floatingActionButton.setColorPressedResId(R.color.fab_disabled_pressed);
 
             //It was on, now off
             getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
@@ -424,8 +424,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         prefsEditor.apply();
 
         if (previousState) {
-            floatingActionButton.setColorNormalResId(R.color.fab_red_dark);
-            floatingActionButton.setColorPressedResId(R.color.fab_red_light);
+            floatingActionButton.setColorNormalResId(R.color.fab_disabled);
+            floatingActionButton.setColorPressedResId(R.color.fab_disabled_pressed);
 
             //It's off now, do nothing
         } else {
@@ -446,8 +446,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         prefsEditor.apply();
 
         if (previousState) {
-            floatingActionButton.setColorNormalResId(R.color.fab_red_dark);
-            floatingActionButton.setColorPressedResId(R.color.fab_red_light);
+            floatingActionButton.setColorNormalResId(R.color.fab_disabled);
+            floatingActionButton.setColorPressedResId(R.color.fab_disabled_pressed);
 
             //It's off now, do nothing
         } else {
@@ -468,8 +468,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         prefsEditor.apply();
 
         if (previousState) {
-            floatingActionButton.setColorNormalResId(R.color.fab_red_dark);
-            floatingActionButton.setColorPressedResId(R.color.fab_red_light);
+            floatingActionButton.setColorNormalResId(R.color.fab_disabled);
+            floatingActionButton.setColorPressedResId(R.color.fab_disabled_pressed);
 
             clearAndReaddAllToMap();
         } else {
@@ -490,8 +490,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         prefsEditor.apply();
 
         if (previousState) {
-            floatingActionButton.setColorNormalResId(R.color.fab_red_dark);
-            floatingActionButton.setColorPressedResId(R.color.fab_red_light);
+            floatingActionButton.setColorNormalResId(R.color.fab_disabled);
+            floatingActionButton.setColorPressedResId(R.color.fab_disabled_pressed);
 
             clearAndReaddAllToMap();
         } else {
@@ -523,7 +523,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             setStatusMessage("Logging restarted.");
         } else {
             setStatusMessage("You need to link a device before you can start logging!");
-            ToggleButton toggleButton = (ToggleButton) findViewById(R.id.toggleButtonStartLogging);
+            SwitchCompat toggleButton = (SwitchCompat) findViewById(R.id.switchStartLogging);
             toggleButton.setChecked(false);
         }
     }
@@ -593,7 +593,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         //check for permissions
         MyApplication mApplication = (MyApplication) getApplicationContext();
         if (!mApplication.checkPermissions()) {
-            ToggleButton toggleButton = (ToggleButton) findViewById(R.id.toggleButtonStartLogging);
+            SwitchCompat toggleButton = (SwitchCompat) findViewById(R.id.switchStartLogging);
             toggleButton.setChecked(false);
 
             AlertDialog.Builder builder1 = new AlertDialog.Builder(MapsActivity.this);
@@ -622,7 +622,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             alert11.show();
         } else {
             //disable toggle button until service is bound
-            ToggleButton toggleButton = (ToggleButton) findViewById(R.id.toggleButtonStartLogging);
+            SwitchCompat toggleButton = (SwitchCompat) findViewById(R.id.switchStartLogging);
             toggleButton.setEnabled(false);
 
             //begin service

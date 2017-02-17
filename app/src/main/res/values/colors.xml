@@ -13,4 +13,7 @@
     <!--red: 700#E64A19 800#D84315 -->
     <color name="fab_red_dark">#D84315</color>
     <color name="fab_red_light">#E64A19</color>
+
+    <color name="fab_disabled">#1F000000</color>
+    <color name="fab_disabled_pressed">#3F000000</color>
 </resources>
