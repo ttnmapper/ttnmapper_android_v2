@@ -1,5 +1,7 @@
 package org.ttnmapper.ttnmapperv2;
 
+import android.location.Location;
+
 import java.util.ArrayList;
 
 /**
@@ -32,6 +34,8 @@ public class Packet {
 
     ArrayList<Gateway> gateways = new ArrayList<>();
     double maxRssi = 0;
+    double maxSnr = 100;
+    double maxDistance = 0;
 
     double latitude;
     double longitude;
@@ -68,6 +72,42 @@ public class Packet {
             }
         }
         return maxRssi;
+    }
+
+    public double getMaxSnr() {
+        if (maxSnr == 100) {
+            for (Gateway gateway : gateways) {
+                if (maxSnr == 0 || gateway.getSnr() > maxSnr) {
+                    maxSnr = gateway.getSnr();
+                }
+            }
+        }
+        return maxSnr;
+    }
+
+    public double getMaxDistance() {
+        if (maxDistance == 0) {
+            for (Gateway gateway : gateways) {
+                double distance = 0;
+                if (gateway.getLatitude() == 0 || gateway.getLongitude() == 0 || latitude == 0 || longitude == 0) {
+                    distance = 0;
+                } else {
+                    Location locationA = new Location("");
+                    locationA.setLatitude(gateway.getLatitude());
+                    locationA.setLongitude(gateway.getLongitude());
+
+                    Location locationB = new Location("");
+                    locationB.setLatitude(latitude);
+                    locationB.setLongitude(longitude);
+
+                    distance = locationA.distanceTo(locationB);
+                }
+                if (distance > maxDistance) {
+                    maxDistance = distance;
+                }
+            }
+        }
+        return maxDistance;
     }
 
     public ArrayList<Gateway> getGateways() {

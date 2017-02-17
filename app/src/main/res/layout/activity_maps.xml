@@ -118,7 +118,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:onClick="onToggleLordrive"
-            android:src="@drawable/gateway_dot_white"
+            android:src="@drawable/gateway_dot_white_vector"
             fab:fab_colorNormal="#D84315"
             fab:fab_colorPressed="#E64A19"
             fab:fab_label="LoRdrive mode"
@@ -148,6 +148,20 @@
 
 
     </com.github.clans.fab.FloatingActionMenu>
+
+    <TextView
+        android:id="@+id/textViewCounters"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true"
+        android:layout_toLeftOf="@+id/linearLayoutStartLogging"
+        android:layout_toStartOf="@+id/linearLayoutStartLogging"
+        android:paddingBottom="10dp"
+        android:paddingLeft="68dp"
+        android:text=""
+        android:textStyle="bold" />
 
 
 </RelativeLayout>

@@ -243,7 +243,11 @@ public class TTNMapperService extends Service implements GoogleApiClient.Connect
                         intent.putExtra("message", "rxmessage");
                         LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(intent);
 
-                        sendNotification("Last packet received at:\n" + (new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.ENGLISH).format(new Date())));
+                        sendNotification("Last packet received at: " +
+                                (new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.ENGLISH).format(new Date())) + "\n" +
+                                "RSSI: " + mApplication.lastPacket.getMaxRssi() + " SNR: " + mApplication.lastPacket.getMaxSnr() + "\n" +
+                                "Gateways:" + mApplication.lastPacket.getGateways().size() + " Max distance: " + mApplication.lastPacket.getMaxDistance()
+                        );
                     } else {
                         Log.d(TAG, "Packet received, GPS location unknown");
                         sendNotification("Packet received, but location of phone is still unknown.\n" + (new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.ENGLISH).format(new Date())));

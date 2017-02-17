@@ -721,6 +721,16 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         mMap.addMarker(options);
         markersOnMap.add(options); //save a list of markers used for auto zooming
+
+        //update counters after adding a packet
+        MyApplication mApplication = (MyApplication) getApplicationContext();
+        TextView tv = (TextView) findViewById(R.id.textViewCounters);
+        if (gatewaysWithMarkers.isEmpty()) {
+            tv.setText(mApplication.packets.size() + " packets");
+        } else {
+            tv.setText(mApplication.packets.size() + " packets\n" +
+                    gatewaysWithMarkers.size() + " gateways");
+        }
     }
 
     public void addMeasurementLine(Packet packet) {
