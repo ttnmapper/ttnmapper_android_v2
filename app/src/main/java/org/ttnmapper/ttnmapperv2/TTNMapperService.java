@@ -246,7 +246,7 @@ public class TTNMapperService extends Service implements GoogleApiClient.Connect
                         LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(intent);
 
                         if (mApplication.lastPacket.getGateways().size() > 1) {
-                            sendNotification("Lastest packet:\n" +
+                            sendNotification("Latest packet:\n" +
                                     (new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.ENGLISH).format(new Date())) + "\n" +
                                     "Gateways: " + mApplication.lastPacket.getGateways().size() + "\n" +
                                     "RSSI: " + mApplication.lastPacket.getMaxRssi() + "dBm (max)\n" +
@@ -254,7 +254,7 @@ public class TTNMapperService extends Service implements GoogleApiClient.Connect
                                     "Distance: " + Math.round(mApplication.lastPacket.getMaxDistance() * 100) / 100 + "m (max)"
                             );
                         } else if (mApplication.lastPacket.getGateways().size() == 1) {
-                            sendNotification("Lastest packet:\n" +
+                            sendNotification("Latest packet:\n" +
                                     (new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.ENGLISH).format(new Date())) + "\n" +
                                     "Received by: " + mApplication.lastPacket.getGateways().get(0).gatewayID + "\n" +
                                     "RSSI: " + mApplication.lastPacket.getMaxRssi() + "dBm\n" +
@@ -262,7 +262,7 @@ public class TTNMapperService extends Service implements GoogleApiClient.Connect
                                     "Distance: " + Math.round(mApplication.lastPacket.getMaxDistance() * 100) / 100 + "m"
                             );
                         } else {
-                            sendNotification("Lastest packet:\n" +
+                            sendNotification("Latest packet:\n" +
                                     (new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.ENGLISH).format(new Date())) + "\n" +
                                     "Received by unknown gateway!\n" +
                                     "RSSI: " + mApplication.lastPacket.getMaxRssi() + "dBm\n" +

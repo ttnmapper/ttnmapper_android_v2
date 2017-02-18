@@ -270,7 +270,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             SharedPreferences myPrefs = this.getSharedPreferences(SettingConstants.PREFERENCES, MODE_PRIVATE);
             if (myPrefs.getBoolean(SettingConstants.ZOOMBUTTONS, SettingConstants.ZOOMBUTTONS_DEFAULT)) {
                 mMap.getUiSettings().setZoomControlsEnabled(true);
-                mMap.setPadding(0, 0, 0, 90);
+                mMap.setPadding(0, 0, 0, 100);
             } else {
                 mMap.getUiSettings().setZoomControlsEnabled(false);
             }
@@ -563,7 +563,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             SharedPreferences myPrefs = this.getSharedPreferences(SettingConstants.PREFERENCES, MODE_PRIVATE);
             if (myPrefs.getBoolean(SettingConstants.ZOOMBUTTONS, SettingConstants.ZOOMBUTTONS_DEFAULT)) {
                 mMap.getUiSettings().setZoomControlsEnabled(true);
-                mMap.setPadding(0, 0, 0, 90);
+                mMap.setPadding(0, 0, 0, 100);
             }
 
             // Customise the styling of the base map using a JSON object defined

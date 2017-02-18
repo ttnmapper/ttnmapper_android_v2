@@ -1,14 +1,4 @@
 # TTN Mapper Android App Version 2
-This is still a work in progress. Contributions are welcome, but impractical at this stage because the codebase is still changing rapidly.
-
-# Current Progress
-Currently the app should be in a Alpa usable state.
-
-## TODO's:
-* Auto zooming
-* Auto centering
-* Coverage layer
-* Loradrive mode
-* Only one gateway shown per packet
+Currently the app is in Release Candidate state. A few alpha builds were published to the Play Store the past week. Contributions are welcome in both Pull Request or Issue form.
 
 ![screenshot](screenshot.png "Current screenshot")
