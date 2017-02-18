@@ -126,9 +126,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     toggleButton.setChecked(false);
 
                     if (payloadData == null) {
-                        setStatusMessage("Logging stopped unexpectedly");
+                        setStatusMessage("Mapping stopped unexpectedly");
                     } else {
-                        setStatusMessage("Logging stopped - " + payloadData);
+                        setStatusMessage("Mapping stopped - " + payloadData);
                     }
                     break;
                 case "notification":
@@ -237,13 +237,13 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         if (!mApplication.isConfigured()) {
             setStatusMessage("You have to link a device before mapping coverage.");
         } else {
-            setStatusMessage("Ready to start logging.");
+            setStatusMessage("Ready to start mapping.");
         }
 
         //logging button
         SwitchCompat toggleButton = (SwitchCompat) findViewById(R.id.switchStartLogging);
         if (isMyServiceRunning(TTNMapperService.class)) {
-            setStatusMessage("Logging in progress.");
+            setStatusMessage("Mapping in progress.");
             toggleButton.setChecked(true);
             Intent startServiceIntent = new Intent(this, TTNMapperService.class);
             bindService(startServiceIntent, mConnection, Context.BIND_AUTO_CREATE);
@@ -296,8 +296,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             if (isChecked) {
                 MyApplication mApplication = (MyApplication) getApplicationContext();
                 if (mApplication.isConfigured()) {
-                    Log.d(TAG, "Starting logging");
-                    setStatusMessage("Logging started.");
+                    Log.d(TAG, "Starting mapping");
+                    setStatusMessage("Mapping started.");
 
                     //only start the service if we are not already bound to it
                     if (!mBound && !isMyServiceRunning(TTNMapperService.class)) {
@@ -308,14 +308,14 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                         Log.d(TAG, "Trying to start a service that is already bound.");
                     }
                 } else {
-                    setStatusMessage("You need to link a device before you can start logging!");
-                    Toast.makeText(this, "You need to link a device before you can start logging!", Toast.LENGTH_SHORT).show();
+                    setStatusMessage("You need to link a device before you can start mapping!");
+                    Toast.makeText(this, "You need to link a device before you can start mapping!", Toast.LENGTH_SHORT).show();
                     buttonView.setChecked(false);
                 }
             } else {
-                Log.d(TAG, "Stopping logging");
+                Log.d(TAG, "Stopping mapping");
                 stopLoggingService();
-                setStatusMessage("Logging stopped.");
+                setStatusMessage("Mapping stopped.");
             }
         }
     }
@@ -512,31 +512,22 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     public void restartLogging() {
-        Log.d(TAG, "Restarting logging");
+        Log.d(TAG, "Restarting mapping");
 
         stopLoggingService();
 
         MyApplication mApplication = (MyApplication) getApplicationContext();
         if (mApplication.isConfigured()) {
-            Log.d(TAG, "Starting logging");
+            Log.d(TAG, "Starting mapping");
             startLoggingService();
-            setStatusMessage("Logging restarted.");
+            setStatusMessage("Mapping restarted.");
         } else {
-            setStatusMessage("You need to link a device before you can start logging!");
+            setStatusMessage("You need to link a device before you can start mapping!");
             SwitchCompat toggleButton = (SwitchCompat) findViewById(R.id.switchStartLogging);
             toggleButton.setChecked(false);
         }
     }
 
-    /**
-     * Manipulates the map once available.
-     * This callback is triggered when the map is ready to be used.
-     * This is where we can add markers or lines, add listeners or move the camera. In this case,
-     * we just add a marker near Sydney, Australia.
-     * If Google Play services is not installed on the device, the user will be prompted to install
-     * it inside the SupportMapFragment. This method will only be triggered once the user has
-     * installed Google Play services and returned to the app.
-     */
     @Override
     public void onMapReady(GoogleMap googleMap) {
 
@@ -547,6 +538,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             } else {
                 mMap.setMyLocationEnabled(true);
             }
+
+            //Hide navigation buttons
+            mMap.getUiSettings().setMapToolbarEnabled(false);
 
             // Customise the styling of the base map using a JSON object defined
             // in a raw resource file.
@@ -674,6 +668,16 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             options.transparency((float) 0.8);
             mMap.addTileOverlay(options);
         }
+
+
+        //update counters after adding a packet
+        TextView tv = (TextView) findViewById(R.id.textViewCounters);
+        if (gatewaysWithMarkers.isEmpty()) {
+            tv.setText(mApplication.packets.size() + " packets");
+        } else {
+            tv.setText(mApplication.packets.size() + " packets\n" +
+                    gatewaysWithMarkers.size() + " gateways");
+        }
     }
 
     public void addLastMeasurementToMap() {
@@ -693,6 +697,15 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         if (myPrefs.getBoolean(SettingConstants.AUTO_ZOOM, SettingConstants.AUTO_ZOOM_DEFAULT)) {
             autoZoomMap();
+        }
+
+        //update counters after adding a packet
+        TextView tv = (TextView) findViewById(R.id.textViewCounters);
+        if (gatewaysWithMarkers.isEmpty()) {
+            tv.setText(mApplication.packets.size() + " packets");
+        } else {
+            tv.setText(mApplication.packets.size() + " packets\n" +
+                    gatewaysWithMarkers.size() + " gateways");
         }
     }
 
@@ -718,19 +731,12 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
         options.position(new LatLng(packet.getLatitude(), packet.getLongitude()));
         options.anchor((float) 0.5, (float) 0.5);
+        options.title("RSSI: " + packet.getMaxRssi() + "dBm\n" +
+                "SNR: " + packet.getMaxSnr() + "dB\n" +
+                "Gateways: " + packet.gateways.size());
 
         mMap.addMarker(options);
         markersOnMap.add(options); //save a list of markers used for auto zooming
-
-        //update counters after adding a packet
-        MyApplication mApplication = (MyApplication) getApplicationContext();
-        TextView tv = (TextView) findViewById(R.id.textViewCounters);
-        if (gatewaysWithMarkers.isEmpty()) {
-            tv.setText(mApplication.packets.size() + " packets");
-        } else {
-            tv.setText(mApplication.packets.size() + " packets\n" +
-                    gatewaysWithMarkers.size() + " gateways");
-        }
     }
 
     public void addMeasurementLine(Packet packet) {
@@ -778,7 +784,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     gwoptions.icon(BitmapDescriptorFactory.fromResource(R.drawable.gateway_dot));
                     gwoptions.position(new LatLng(gwLat, gwLon));
                     gwoptions.title(gatewayId);
-                    gwoptions.snippet(gatewayId);
+                    //gwoptions.snippet(gatewayId);
                     gwoptions.anchor((float) 0.5, (float) 0.5);
                     mMap.addMarker(gwoptions);
 

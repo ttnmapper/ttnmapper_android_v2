@@ -51,16 +51,25 @@
         </LinearLayout>
     </LinearLayout>
 
-    <TextView
-        android:id="@+id/textViewStatus"
-        android:layout_width="match_parent"
+    <LinearLayout
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true"
         android:layout_alignParentTop="true"
-        android:background="#AA000000"
-        android:text=""
-        android:textColor="#FFFFFF" />
+        android:padding="15dp">
+
+        <TextView
+            android:id="@+id/textViewStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/toggle_background"
+            android:padding="5dp"
+            android:text="Startup"
+            android:textColor="#FF000000"
+            android:textStyle="bold" />
+
+    </LinearLayout>
 
     <com.github.clans.fab.FloatingActionMenu
         android:id="@+id/menuActions"
@@ -161,6 +170,7 @@
         android:paddingBottom="10dp"
         android:paddingLeft="68dp"
         android:text=""
+        android:textColor="#FF000000"
         android:textStyle="bold" />
 
 

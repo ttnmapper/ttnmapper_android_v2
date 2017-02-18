@@ -77,7 +77,7 @@ public class Packet {
     public double getMaxSnr() {
         if (maxSnr == 100) {
             for (Gateway gateway : gateways) {
-                if (maxSnr == 0 || gateway.getSnr() > maxSnr) {
+                if (maxSnr == 100 || gateway.getSnr() > maxSnr) {
                     maxSnr = gateway.getSnr();
                 }
             }
