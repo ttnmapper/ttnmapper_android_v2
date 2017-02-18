@@ -1,8 +1,12 @@
 package org.ttnmapper.ttnmapperv2;
 
+import android.app.Activity;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.media.RingtoneManager;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -92,6 +96,13 @@ public class SettingsActivity extends AppCompatActivity {
             textView.setText("No device linked yet");
         }
 
+        //sound
+        SharedPreferences myPrefs = this.getSharedPreferences(SettingConstants.PREFERENCES, MODE_PRIVATE);
+        CheckBox soundCb = (CheckBox) findViewById(R.id.checkBoxNotificationSound);
+        soundCb.setChecked(myPrefs.getBoolean(SettingConstants.SOUNDON, SettingConstants.SOUNDON_DEFAULT));
+        TextView soundTV = (TextView) findViewById(R.id.textViewCurrentSound);
+        soundTV.setText(myPrefs.getString(SettingConstants.SOUNDFILE, SettingConstants.SOUNDFILE_DEFAULT));
+
     }
 
     public void onLinkDeviceClicked(View v) {
@@ -131,6 +142,42 @@ public class SettingsActivity extends AppCompatActivity {
         CheckBox cbSaveToFile = (CheckBox) findViewById(R.id.checkBoxSaveFile);
         mApplication.setSaveToFile(cbSaveToFile.isChecked());
 
+        //sound
+        SharedPreferences myPrefs = this.getSharedPreferences(SettingConstants.PREFERENCES, MODE_PRIVATE);
+        SharedPreferences.Editor prefsEditor = myPrefs.edit();
+
+        CheckBox soundCb = (CheckBox) findViewById(R.id.checkBoxNotificationSound);
+        prefsEditor.putBoolean(SettingConstants.SOUNDON, soundCb.isChecked());
+        prefsEditor.apply();
+
         finish();
+    }
+
+    public void onChooseSound(View v) {
+        Intent intent = new Intent(RingtoneManager.ACTION_RINGTONE_PICKER);
+        intent.putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, RingtoneManager.TYPE_NOTIFICATION);
+        intent.putExtra(RingtoneManager.EXTRA_RINGTONE_TITLE, "Select Tone");
+        intent.putExtra(RingtoneManager.EXTRA_RINGTONE_EXISTING_URI, (Uri) null);
+        this.startActivityForResult(intent, 5);
+    }
+
+    @Override
+    protected void onActivityResult(final int requestCode, final int resultCode, final Intent intent) {
+        if (resultCode == Activity.RESULT_OK && requestCode == 5) {
+            Uri uri = intent.getParcelableExtra(RingtoneManager.EXTRA_RINGTONE_PICKED_URI);
+
+            SharedPreferences myPrefs = this.getSharedPreferences(SettingConstants.PREFERENCES, MODE_PRIVATE);
+            SharedPreferences.Editor prefsEditor = myPrefs.edit();
+            if (uri != null) {
+                prefsEditor.putString(SettingConstants.SOUNDFILE, uri.toString());
+                prefsEditor.apply();
+                Log.d(TAG, "Chosen sound: " + uri.toString());
+            } else {
+                prefsEditor.putString(SettingConstants.SOUNDFILE, "");
+                prefsEditor.apply();
+            }
+            TextView soundTV = (TextView) findViewById(R.id.textViewCurrentSound);
+            soundTV.setText(myPrefs.getString(SettingConstants.SOUNDFILE, SettingConstants.SOUNDFILE_DEFAULT));
+        }
     }
 }

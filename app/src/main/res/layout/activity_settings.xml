@@ -116,6 +116,32 @@
                 android:hint="File name" />
 
             <TextView
+                android:id="@+id/textViewSoundHeading"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingTop="15dp"
+                android:text="About app"
+                android:textAppearance="?android:attr/textAppearanceLarge" />
+
+            <CheckBox
+                android:id="@+id/checkBoxNotificationSound"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Enable notification sound when a packet is received" />
+
+            <TextView
+                android:id="@+id/textViewCurrentSound"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+
+            <Button
+                android:id="@+id/buttonChooseSound"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:onClick="onChooseSound"
+                android:text="Choose notification sound" />
+
+            <TextView
                 android:id="@+id/textViewVersionHeading"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"

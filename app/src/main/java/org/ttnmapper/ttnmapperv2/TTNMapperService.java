@@ -5,8 +5,12 @@ import android.app.Notification;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.Location;
+import android.media.Ringtone;
+import android.media.RingtoneManager;
+import android.net.Uri;
 import android.os.Binder;
 import android.os.Build;
 import android.os.Bundle;
@@ -56,6 +60,8 @@ public class TTNMapperService extends Service implements GoogleApiClient.Connect
     private int reconnectCounter = 0;
     private boolean reconnectPending = false;
     private boolean shouldExit = false;
+
+    private Ringtone ringtone;
 
     @Override
     public IBinder onBind(Intent intent) {
@@ -254,6 +260,8 @@ public class TTNMapperService extends Service implements GoogleApiClient.Connect
                         Log.d(TAG, "Packet received, GPS location unknown");
                         sendNotification("Packet received, but location of phone is still unknown.\n" + (new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.ENGLISH).format(new Date())));
                     }
+
+                    playSound();
                 }
 
                 @Override
@@ -290,6 +298,23 @@ public class TTNMapperService extends Service implements GoogleApiClient.Connect
             } else {
                 stopThisService("MQTT connection failed");
             }
+        }
+    }
+
+    public void playSound() {
+        //sound
+        try {
+            SharedPreferences myPrefs = getSharedPreferences(SettingConstants.PREFERENCES, MODE_PRIVATE);
+            if (myPrefs.getBoolean(SettingConstants.SOUNDON, SettingConstants.SOUNDON_DEFAULT)) {
+                if (ringtone != null) {
+                    ringtone.stop();
+                }
+
+                ringtone = RingtoneManager.getRingtone(getApplicationContext(), Uri.parse(myPrefs.getString(SettingConstants.SOUNDFILE, SettingConstants.SOUNDFILE_DEFAULT)));
+                ringtone.play();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
