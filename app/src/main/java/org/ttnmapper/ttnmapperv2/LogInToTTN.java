@@ -18,6 +18,8 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.crashlytics.android.answers.Answers;
+import com.crashlytics.android.answers.CustomEvent;
 import com.github.scribejava.core.builder.ServiceBuilder;
 import com.github.scribejava.core.model.OAuth2AccessToken;
 import com.github.scribejava.core.model.OAuthRequest;
@@ -83,6 +85,8 @@ public class LogInToTTN extends AppCompatActivity {
         MyApplication mApplication = (MyApplication)getApplicationContext();
         mApplication.ttnApplications = new ArrayList<>();
         mApplication.chosenTtnApplication = null;
+
+        Answers.getInstance().logCustom(new CustomEvent("Device configure").putCustomAttribute("method", "oauth2"));
 
         loadLoginPage();
     }

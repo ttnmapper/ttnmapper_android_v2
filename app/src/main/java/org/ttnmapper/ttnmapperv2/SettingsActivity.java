@@ -17,6 +17,9 @@ import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.TextView;
 
+import com.crashlytics.android.answers.Answers;
+import com.crashlytics.android.answers.CustomEvent;
+
 public class SettingsActivity extends AppCompatActivity {
 
     private final String TAG = "SettingsActivity";
@@ -142,9 +145,16 @@ public class SettingsActivity extends AppCompatActivity {
             mApplication.setExperiment(false);
         }
 
+        Answers.getInstance().logCustom(new CustomEvent("Upload")
+                .putCustomAttribute("experiment", rbExperiment.isChecked() + "")
+                .putCustomAttribute("upload", rbUpload.isChecked() + ""));
+
         //save to file
         CheckBox cbSaveToFile = (CheckBox) findViewById(R.id.checkBoxSaveFile);
         mApplication.setSaveToFile(cbSaveToFile.isChecked());
+
+        Answers.getInstance().logCustom(new CustomEvent("Save To File")
+                .putCustomAttribute("on", cbSaveToFile.isChecked() + ""));
 
         //sound
         SharedPreferences myPrefs = this.getSharedPreferences(SettingConstants.PREFERENCES, MODE_PRIVATE);
@@ -153,9 +163,15 @@ public class SettingsActivity extends AppCompatActivity {
         CheckBox soundCb = (CheckBox) findViewById(R.id.checkBoxNotificationSound);
         prefsEditor.putBoolean(SettingConstants.SOUNDON, soundCb.isChecked());
 
+        Answers.getInstance().logCustom(new CustomEvent("Sound On")
+                .putCustomAttribute("on", soundCb.isChecked() + ""));
+
         //zoom
         CheckBox zoomCb = (CheckBox) findViewById(R.id.checkBoxZoom);
         prefsEditor.putBoolean(SettingConstants.ZOOMBUTTONS, zoomCb.isChecked());
+
+        Answers.getInstance().logCustom(new CustomEvent("Zoom buttons")
+                .putCustomAttribute("on", zoomCb.isChecked() + ""));
 
         prefsEditor.apply();
 
@@ -181,6 +197,9 @@ public class SettingsActivity extends AppCompatActivity {
                 prefsEditor.putString(SettingConstants.SOUNDFILE, uri.toString());
                 prefsEditor.apply();
                 Log.d(TAG, "Chosen sound: " + uri.toString());
+
+                Answers.getInstance().logCustom(new CustomEvent("Sound")
+                        .putCustomAttribute("uri", uri.toString()));
             } else {
                 prefsEditor.putString(SettingConstants.SOUNDFILE, "");
                 prefsEditor.apply();

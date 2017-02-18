@@ -1,9 +1,12 @@
 package org.ttnmapper.ttnmapperv2;
 
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.EditText;
+
+import com.crashlytics.android.answers.Answers;
+import com.crashlytics.android.answers.CustomEvent;
 
 public class LinkDeviceManually extends AppCompatActivity {
 
@@ -40,6 +43,8 @@ public class LinkDeviceManually extends AppCompatActivity {
         mApplication.setTtnDeviceId(deviceID.getText().toString());
         mApplication.setTtnAccessKey(accessKey.getText().toString());
         mApplication.setTtnBroker(broker.getText().toString());
+
+        Answers.getInstance().logCustom(new CustomEvent("Device configure").putCustomAttribute("method", "manually"));
 
         finish();
     }

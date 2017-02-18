@@ -131,7 +131,13 @@ public class TTNMapperService extends Service implements GoogleApiClient.Connect
         mApplication.setLatestAcc(0.0);
         mApplication.setLatestProvider("");
 
-        new mqttConnectThread().execute();
+        if (mqttClient == null) {
+            new mqttConnectThread().execute();
+        } else if (!mqttClient.isConnected()) {
+            new mqttConnectThread().execute();
+        } else {
+            Log.d(TAG, "MQTT already connected");
+        }
 
         return START_STICKY;
     }
@@ -153,11 +159,13 @@ public class TTNMapperService extends Service implements GoogleApiClient.Connect
         intent.putExtra("message", "locationupdate");
         LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
 
-        if (mqttClient != null) {
-            if (!mqttClient.isConnected() && !reconnectPending && !shouldExit) {
-                new mqttConnectThread().execute();
-            }
-        }
+        // This caused multiple MQTT threads to start.
+//        if (mqttClient != null) {
+//            if (!mqttClient.isConnected() && !reconnectPending && !shouldExit) {
+//                Log.d(TAG, "Location update starting MQTT");
+//                new mqttConnectThread().execute();
+//            }
+//        }
     }
 
     private void sendNotification(String message) {
@@ -185,6 +193,7 @@ public class TTNMapperService extends Service implements GoogleApiClient.Connect
     }
 
     void mqtt_connect() {
+        Log.d(TAG, "mqtt_connect");
         MyApplication mApplication = (MyApplication) getApplicationContext();
         try {
             mqttClient = new MqttClient("tcp://" + mApplication.getTtnBroker(), MqttClient.generateClientId(), persistence);
@@ -333,14 +342,14 @@ public class TTNMapperService extends Service implements GoogleApiClient.Connect
 
     public void mqtt_disconnect() {
         if (mqttClient != null) {
-            if (mqttClient.isConnected()) {
-                try {
+            try {
+                if (mqttClient.isConnected()) {
                     Log.d(TAG, "Disconnecting MQTT");
                     mqttClient.disconnect();
-                    mqttClient.close();
-                } catch (MqttException e) {
-                    e.printStackTrace();
                 }
+                mqttClient.close();
+            } catch (MqttException e) {
+                e.printStackTrace();
             }
         }
         Log.d(TAG, "MQTT disconnected");
@@ -408,8 +417,15 @@ public class TTNMapperService extends Service implements GoogleApiClient.Connect
 
     private class mqttConnectThread extends AsyncTask<Void, Void, Void> {
         protected Void doInBackground(Void... params) {
+            Log.d(TAG, "mqttConnectThread starting");
             mqtt_connect();
             return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            super.onPostExecute(aVoid);
+            Log.d(TAG, "mqttConnectThread Finished");
         }
     }
 

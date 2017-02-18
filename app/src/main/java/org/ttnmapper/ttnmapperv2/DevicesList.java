@@ -6,6 +6,9 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
 
+import com.crashlytics.android.answers.Answers;
+import com.crashlytics.android.answers.CustomEvent;
+
 import java.util.ArrayList;
 
 public class DevicesList extends AppCompatActivity implements AdapterView.OnItemClickListener {
@@ -37,6 +40,14 @@ public class DevicesList extends AppCompatActivity implements AdapterView.OnItem
         MyApplication mApplication = (MyApplication)getApplicationContext();
 
         mApplication.setTtnDeviceId(selectedDevice);
+        if (selectedDevice.equals("+")) {
+            Answers.getInstance().logCustom(new CustomEvent("Levices")
+                    .putCustomAttribute("all devices", "" + true));
+        } else {
+            Answers.getInstance().logCustom(new CustomEvent("Levices")
+                    .putCustomAttribute("all devices", "" + false));
+        }
+
         mApplication.ttnApplications.clear(); //free some memory
         finish();
     }

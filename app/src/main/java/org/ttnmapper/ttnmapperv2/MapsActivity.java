@@ -31,6 +31,8 @@ import android.widget.CompoundButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.crashlytics.android.answers.Answers;
+import com.crashlytics.android.answers.CustomEvent;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
 import com.google.android.gms.maps.CameraUpdate;
@@ -317,6 +319,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                         Log.d(TAG, "Starting mapping");
                         setStatusMessage("Mapping started.");
                         startLoggingService();
+                        Answers.getInstance().logCustom(new CustomEvent("Mapping started"));
                     } else if (isMyServiceRunning(TTNMapperService.class)) {
                         Log.d(TAG, "Trying to start a service that is already running.");
                     } else {
@@ -331,6 +334,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 Log.d(TAG, "Stopping mapping");
                 stopLoggingService();
                 setStatusMessage("Mapping stopped.");
+                Answers.getInstance().logCustom(new CustomEvent("Mapping stopped"));
             }
         }
     }
@@ -427,6 +431,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             //It was off, now on
             getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         }
+
+        Answers.getInstance().logCustom(new CustomEvent(SettingConstants.KEEP_SCREEN_ON)
+                .putCustomAttribute("on", "" + !previousState));
     }
 
     public void onToggleAutoCenter(View v) {
@@ -449,6 +456,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
             autoCenterMap();
         }
+
+        Answers.getInstance().logCustom(new CustomEvent(SettingConstants.AUTO_CENTER)
+                .putCustomAttribute("on", "" + !previousState));
     }
 
     public void onToggleAutoZoom(View v) {
@@ -471,6 +481,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
             autoZoomMap();
         }
+
+        Answers.getInstance().logCustom(new CustomEvent(SettingConstants.AUTO_ZOOM)
+                .putCustomAttribute("on", "" + !previousState));
     }
 
     public void onToggleLordrive(View v) {
@@ -493,6 +506,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
             clearAndReaddAllToMap();
         }
+
+        Answers.getInstance().logCustom(new CustomEvent(SettingConstants.LORDRIVE)
+                .putCustomAttribute("on", "" + !previousState));
     }
 
     public void onToggleCoverage(View v) {
@@ -519,6 +535,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             options.transparency((float) 0.8);
             mMap.addTileOverlay(options);
         }
+
+        Answers.getInstance().logCustom(new CustomEvent(SettingConstants.COVERAGE)
+                .putCustomAttribute("on", "" + !previousState));
     }
 
     public void onSettingsClicked(View v) {

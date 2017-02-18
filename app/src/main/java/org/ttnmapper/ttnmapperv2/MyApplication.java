@@ -9,6 +9,8 @@ import android.support.v4.app.ActivityCompat;
 import android.util.Log;
 
 import com.crashlytics.android.Crashlytics;
+import com.crashlytics.android.answers.Answers;
+import com.crashlytics.android.answers.CustomEvent;
 import com.google.android.gms.iid.InstanceID;
 
 import org.json.JSONArray;
@@ -451,6 +453,7 @@ public class MyApplication extends Application {
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
+                Answers.getInstance().logCustom(new CustomEvent("Upload to experiment"));
             }
 
             //post packet
@@ -460,6 +463,7 @@ public class MyApplication extends Application {
                     public void onFailure(Call call, IOException e) {
                         Log.d(TAG, "Error uploading");
                         e.printStackTrace();
+                        Answers.getInstance().logCustom(new CustomEvent("Upload").putCustomAttribute("error", e.toString()));
                     }
 
                     @Override
@@ -470,17 +474,22 @@ public class MyApplication extends Application {
                             if (!returnedString.contains("New records created successfully")) {
                                 // Request not successful
                                 Log.d(TAG, "server error: " + returnedString);
+                                Answers.getInstance().logCustom(new CustomEvent("Upload").putCustomAttribute("error", returnedString));
+                            } else {
+                                Answers.getInstance().logCustom(new CustomEvent("Upload").putCustomAttribute("error", "success"));
                             }
                             // Do what you want to do with the response.
                         } else {
                             // Request not successful
                             Log.d(TAG, "server error");
+                            Answers.getInstance().logCustom(new CustomEvent("Upload").putCustomAttribute("error", "server error"));
                         }
                     }
                 });
             } catch (IOException e) {
                 Log.d(TAG, "HTTP call IO exception");
                 e.printStackTrace();
+                Answers.getInstance().logCustom(new CustomEvent("Upload").putCustomAttribute("error", e.toString()));
             }
         }
     }
