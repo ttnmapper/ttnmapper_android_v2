@@ -232,23 +232,29 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     @Override
     protected void onResume() {
         super.onResume();
+        startUpComplete = false;
         Log.d(TAG, "onResume");
         MyApplication mApplication = (MyApplication) getApplicationContext();
-        if (!mApplication.isConfigured()) {
-            setStatusMessage("You have to link a device before mapping coverage.");
-        } else {
-            setStatusMessage("Ready to start mapping.");
-        }
 
         //logging button
         SwitchCompat toggleButton = (SwitchCompat) findViewById(R.id.switchStartLogging);
         if (isMyServiceRunning(TTNMapperService.class)) {
-            setStatusMessage("Mapping in progress.");
             toggleButton.setChecked(true);
             Intent startServiceIntent = new Intent(this, TTNMapperService.class);
             bindService(startServiceIntent, mConnection, Context.BIND_AUTO_CREATE);
+            setStatusMessage(mApplication.lastStatusMessage);
         } else {
             toggleButton.setChecked(false);
+
+            if (!mApplication.isConfigured()) {
+                setStatusMessage("You have to link a device before mapping coverage.");
+            } else {
+                if (mApplication.lastStatusMessage.equals("")) {
+                    setStatusMessage("Ready to start mapping.");
+                } else {
+                    setStatusMessage(mApplication.lastStatusMessage);
+                }
+            }
         }
 
         // Register mMessageReceiver to receive messages.
@@ -305,11 +311,11 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             if (isChecked) {
                 MyApplication mApplication = (MyApplication) getApplicationContext();
                 if (mApplication.isConfigured()) {
-                    Log.d(TAG, "Starting mapping");
-                    setStatusMessage("Mapping started.");
 
                     //only start the service if we are not already bound to it
                     if (!mBound && !isMyServiceRunning(TTNMapperService.class)) {
+                        Log.d(TAG, "Starting mapping");
+                        setStatusMessage("Mapping started.");
                         startLoggingService();
                     } else if (isMyServiceRunning(TTNMapperService.class)) {
                         Log.d(TAG, "Trying to start a service that is already running.");
@@ -813,6 +819,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     public void setStatusMessage(String message) {
+        MyApplication mApplication = (MyApplication) getApplicationContext();
+        mApplication.lastStatusMessage = message;
+
         TextView tv = (TextView) findViewById(R.id.textViewStatus);
         tv.setText(message);
     }

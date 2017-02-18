@@ -8,6 +8,7 @@ import android.content.res.Configuration;
 import android.support.v4.app.ActivityCompat;
 import android.util.Log;
 
+import com.crashlytics.android.Crashlytics;
 import com.google.android.gms.iid.InstanceID;
 
 import org.json.JSONArray;
@@ -25,6 +26,7 @@ import java.util.Date;
 import java.util.Locale;
 import java.util.TimeZone;
 
+import io.fabric.sdk.android.Fabric;
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.MediaType;
@@ -44,6 +46,7 @@ public class MyApplication extends Application {
     public TTNApplication chosenTtnApplication = null;
     public ArrayList<Packet> packets = new ArrayList<>();
     public Packet lastPacket;
+    public String lastStatusMessage = "";
     private boolean shouldUpload;
     private boolean isExperiment;
     private boolean saveToFile;
@@ -67,6 +70,7 @@ public class MyApplication extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
+        Fabric.with(this, new Crashlytics());
         singleton = this;
 
         SharedPreferences myPrefs = getSharedPreferences(SettingConstants.PREFERENCES, MODE_PRIVATE);

@@ -245,13 +245,31 @@ public class TTNMapperService extends Service implements GoogleApiClient.Connect
                         intent.putExtra("message", "rxmessage");
                         LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(intent);
 
-                        sendNotification("Lastest packet:\n" +
-                                (new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.ENGLISH).format(new Date())) + "\n" +
-                                "RSSI: " + mApplication.lastPacket.getMaxRssi() + "dBm (max)\n" +
-                                "SNR: " + mApplication.lastPacket.getMaxSnr() + "dB (max)\n" +
-                                "Gateways: " + mApplication.lastPacket.getGateways().size() + "\n" +
-                                "Distance: " + Math.round(mApplication.lastPacket.getMaxDistance() * 100) / 100 + "m (max)"
-                        );
+                        if (mApplication.lastPacket.getGateways().size() > 1) {
+                            sendNotification("Lastest packet:\n" +
+                                    (new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.ENGLISH).format(new Date())) + "\n" +
+                                    "Gateways: " + mApplication.lastPacket.getGateways().size() + "\n" +
+                                    "RSSI: " + mApplication.lastPacket.getMaxRssi() + "dBm (max)\n" +
+                                    "SNR: " + mApplication.lastPacket.getMaxSnr() + "dB (max)\n" +
+                                    "Distance: " + Math.round(mApplication.lastPacket.getMaxDistance() * 100) / 100 + "m (max)"
+                            );
+                        } else if (mApplication.lastPacket.getGateways().size() == 1) {
+                            sendNotification("Lastest packet:\n" +
+                                    (new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.ENGLISH).format(new Date())) + "\n" +
+                                    "Received by: " + mApplication.lastPacket.getGateways().get(0).gatewayID + "\n" +
+                                    "RSSI: " + mApplication.lastPacket.getMaxRssi() + "dBm\n" +
+                                    "SNR: " + mApplication.lastPacket.getMaxSnr() + "dB\n" +
+                                    "Distance: " + Math.round(mApplication.lastPacket.getMaxDistance() * 100) / 100 + "m"
+                            );
+                        } else {
+                            sendNotification("Lastest packet:\n" +
+                                    (new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.ENGLISH).format(new Date())) + "\n" +
+                                    "Received by unknown gateway!\n" +
+                                    "RSSI: " + mApplication.lastPacket.getMaxRssi() + "dBm\n" +
+                                    "SNR: " + mApplication.lastPacket.getMaxSnr() + "dB\n" +
+                                    "Distance: " + Math.round(mApplication.lastPacket.getMaxDistance() * 100) / 100 + "m"
+                            );
+                        }
                     } else {
                         Log.d(TAG, "Packet received, GPS location unknown");
                         sendNotification("Packet received, but location of phone is still unknown.\n" + (new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.ENGLISH).format(new Date())));

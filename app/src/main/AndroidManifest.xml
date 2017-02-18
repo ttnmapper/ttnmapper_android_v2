@@ -78,6 +78,9 @@
             android:name=".CheckPermissions"
             android:label="Permissions" />
 
+        <meta-data
+            android:name="io.fabric.ApiKey"
+            android:value="29785e0d8cb576ea183b398f070921d2eca569de" />
     </application>
 
 </manifest>
