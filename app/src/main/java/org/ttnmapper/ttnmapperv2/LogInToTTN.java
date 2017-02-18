@@ -16,6 +16,7 @@ import android.webkit.WebViewClient;
 import android.widget.Button;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.github.scribejava.core.builder.ServiceBuilder;
 import com.github.scribejava.core.model.OAuth2AccessToken;
@@ -25,7 +26,6 @@ import com.github.scribejava.core.model.Verb;
 import com.github.scribejava.core.oauth.OAuth20Service;
 
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
@@ -92,9 +92,27 @@ public class LogInToTTN extends AppCompatActivity {
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
+                WebView webview = (WebView) findViewById(R.id.webViewTTNlogin);
+                webview.setVisibility(View.GONE);
+
                 TextView textView = (TextView) findViewById(R.id.textViewStatus);
+                textView.setVisibility(View.VISIBLE);
                 textView.setText(status);
                 Log.d(TAG, status);
+            }
+        });
+    }
+
+    public void enableRetryButton() {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                Button button = (Button) findViewById(R.id.buttonRetry);
+                button.setVisibility(View.VISIBLE);
+
+                ProgressBar progressBar = (ProgressBar) findViewById(R.id.progressBarLogIn);
+                progressBar.setVisibility(View.GONE);
+
             }
         });
     }
@@ -120,6 +138,21 @@ public class LogInToTTN extends AppCompatActivity {
                 }
                 return false; // then it is not handled by default action
             }
+
+            @Override
+            public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
+                Log.d(TAG, "webview error:" + errorCode);
+                Log.d(TAG, "webview description:" + description);
+                Log.d(TAG, "webview failingurl:" + failingUrl);
+
+                setStatusMessage("Failed to load TTN login page. Check your internet conection.\n\n" +
+                        "error code: " + errorCode + "\n" +
+                        "description: " + description + "\n" +
+                        "failing URL: " + failingUrl);
+                enableRetryButton();
+
+                super.onReceivedError(view, errorCode, description, failingUrl);
+            }
         });
 
         webview.loadUrl(authorizationUrl);
@@ -139,36 +172,34 @@ public class LogInToTTN extends AppCompatActivity {
         ProgressBar progressBar = (ProgressBar) findViewById(R.id.progressBarLogIn);
         progressBar.setVisibility(View.VISIBLE);
 
-        Button button = (Button) findViewById(R.id.buttonRetry);
-
         Map<String, String> callbackData = getQueryParameter(Uri.parse(url));
         if(!callbackData.containsKey("state"))
         {
             Log.d(TAG, "Response does not contain a secret state. Please try again.");
             textView.setText("Response does not contain a secret state. Please try again.");
             progressBar.setVisibility(View.GONE);
-            button.setVisibility(View.VISIBLE);
+            enableRetryButton();
         }
         else if(!callbackData.get("state").equals(secretState))
         {
             Log.d(TAG, "Secret state does not match. "+callbackData.get("state")+" != "+secretState);
             textView.setText("Secret state does not match. Please try again.");
             progressBar.setVisibility(View.GONE);
-            button.setVisibility(View.VISIBLE);
+            enableRetryButton();
         }
         else if(!callbackData.containsKey("code"))
         {
             Log.d(TAG, "Response does not contain a code. Please try again.");
             textView.setText("Response does not contain a code. Please try again.");
             progressBar.setVisibility(View.GONE);
-            button.setVisibility(View.VISIBLE);
+            enableRetryButton();
         }
         else if(callbackData.get("code").equals(""))
         {
             Log.d(TAG, "Invalid code in response. Please try again.");
             textView.setText("Invalid code in response. Please try again.");
             progressBar.setVisibility(View.GONE);
-            button.setVisibility(View.VISIBLE);
+            enableRetryButton();
         }
         else
         {
@@ -245,6 +276,8 @@ public class LogInToTTN extends AppCompatActivity {
                 return service.getAccessToken(code[0]);
             } catch (IOException e) {
                 e.printStackTrace();
+                setStatusMessage("Failed to exchange code for a token.");
+                enableRetryButton();
             }
             return null;
         }
@@ -260,18 +293,18 @@ public class LogInToTTN extends AppCompatActivity {
         }
     }
 
-    private class getApplications extends AsyncTask<String, String, String> {
+    private class getApplications extends AsyncTask<String, String, Boolean> {
 
-        protected String doInBackground(String... strings) {
+        protected Boolean doInBackground(String... strings) {
             OAuthRequest request = new OAuthRequest(Verb.GET, "https://account.thethingsnetwork.org/applications", service);
 
             service.signRequest(accessToken, request);
             request.addHeader("Accept", "application/json");
-            final Response response = request.send();
-
-            setStatusMessage("Application GET response code="+response.getCode());
 
             try {
+                final Response response = request.send();
+                setStatusMessage("Application GET response code=" + response.getCode());
+
                 if (response.getCode() == 401) {
                     setStatusMessage("Not authorized. Try again.");
 
@@ -339,23 +372,26 @@ public class LogInToTTN extends AppCompatActivity {
 
                     }
                 }
-                return null;
-            } catch (IOException | JSONException e) {
+                return true;
+            } catch (Exception e) {
                 e.printStackTrace();
+                setStatusMessage("ERROR while getting list of Applications. Check your internet connection.");
+                enableRetryButton();
+                return false;
             }
-
-            return null;
         }
 
-        protected void onPostExecute(String result) {
-            new getHandlers().execute();
+        protected void onPostExecute(Boolean result) {
+            if (result) {
+                new getHandlers().execute();
+            }
         }
     }
 
-    private class getHandlers extends AsyncTask<String, String, String> {
+    private class getHandlers extends AsyncTask<String, String, Boolean> {
 
         @Override
-        protected String doInBackground(String... strings) {
+        protected Boolean doInBackground(String... strings) {
             setStatusMessage("Discovering handlers");
 
             MyApplication mApplication = (MyApplication)getApplicationContext();
@@ -363,9 +399,10 @@ public class LogInToTTN extends AppCompatActivity {
 
             service.signRequest(accessToken, request);
             request.addHeader("Accept", "application/json");
-            final Response response = request.send();
 
             try {
+                final Response response = request.send();
+
                 JSONObject resultData = new JSONObject(response.getBody());
                 JSONArray handlers = resultData.getJSONArray("services");
 
@@ -420,25 +457,33 @@ public class LogInToTTN extends AppCompatActivity {
                     }
                 }
 
-            } catch (IOException | JSONException e) {
-                e.printStackTrace();
-            }
+                return true;
 
-            return null;
+            } catch (Exception e) {
+                e.printStackTrace();
+                setStatusMessage("ERROR while discovering handlers. Maybe the discovery server is offline, or this service is blocked on your internet connection.");
+                enableRetryButton();
+                return false;
+            }
         }
 
-        protected void onPostExecute(String result) {
-            new getDevices().execute();
+        protected void onPostExecute(Boolean result) {
+            if (result) {
+                new getDevices().execute();
+            } else {
+                //error
+            }
         }
     }
 
     //applications/{app_id}/devices
     //http://eu.thethings.network:8084/applications/jpm_testing/devices
-    private class getDevices extends AsyncTask<String, String, String> {
+    private class getDevices extends AsyncTask<String, String, Boolean> {
 
         @Override
-        protected String doInBackground(String... strings) {
+        protected Boolean doInBackground(String... strings) {
             MyApplication mApplication = (MyApplication)getApplicationContext();
+            Boolean result = true;
 
             for (TTNApplication currentApp : mApplication.ttnApplications)
             {
@@ -461,14 +506,17 @@ public class LogInToTTN extends AppCompatActivity {
                 //request.addBodyParameter("scope", "apps:"+currentApp.getId());
 
                 String restrictedToken = "";
-
-                final Response response = request.send();
+                Log.d(TAG, "sending request");
 
                 try {
+                    final Response response = request.send();
+                    Log.d(TAG, "Restricted token received");
                     restrictedToken = new JSONObject(response.getBody()).getString("access_token");
 
-                } catch (IOException | JSONException e) {
+                } catch (Exception e) {
                     e.printStackTrace();
+                    setStatusMessage("Failed to get a restricted token for app" + currentApp.getId() + ". Check your internet connection.");
+                    result = false;
                 }
 
                 String URL = currentApp.getApiAddress()+"/applications/"+currentApp.getId()+"/devices";
@@ -479,9 +527,9 @@ public class LogInToTTN extends AppCompatActivity {
                 request.addHeader("Accept", "application/json");
                 request.addHeader("Authorization", "Bearer "+restrictedToken);
 
-                final Response devicesResponse = request.send();
-
                 try {
+                    final Response devicesResponse = request.send();
+
                     /* {"devices":
                        [
                          {"app_id":"jpm_mapping_nodes",
@@ -511,16 +559,21 @@ public class LogInToTTN extends AppCompatActivity {
                         currentApp.addDevice(devices.getJSONObject(i).getString("dev_id"));
                         Log.d(TAG, devices.getJSONObject(i).getString("dev_id"));
                     }
-                } catch (IOException | JSONException e) {
+                } catch (Exception e) {
                     e.printStackTrace();
+                    setStatusMessage("ERROR while getting list of devices for app " + currentApp.getId());
+                    result = false;
                 }
 
             }
 
-            return null;
+            return result;
         }
 
-        protected void onPostExecute(String result) {
+        protected void onPostExecute(Boolean result) {
+            if (!result) {
+                Toast.makeText(getApplicationContext(), "Can not retrieve device list", Toast.LENGTH_SHORT).show();
+            }
             Intent intent = new Intent(getApplicationContext(), ApplicationList.class);
             startActivity(intent);
             finish();

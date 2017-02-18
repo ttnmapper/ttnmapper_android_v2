@@ -8,9 +8,11 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.Location;
+import android.media.AudioManager;
+import android.media.MediaPlayer;
 import android.media.Ringtone;
-import android.media.RingtoneManager;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Binder;
 import android.os.Build;
 import android.os.Bundle;
@@ -129,13 +131,7 @@ public class TTNMapperService extends Service implements GoogleApiClient.Connect
         mApplication.setLatestAcc(0.0);
         mApplication.setLatestProvider("");
 
-        handler.post(new Runnable() {
-            @Override
-            public void run() {
-                //start mqtt
-                mqtt_connect();
-            }
-        });
+        new mqttConnectThread().execute();
 
         return START_STICKY;
     }
@@ -159,7 +155,7 @@ public class TTNMapperService extends Service implements GoogleApiClient.Connect
 
         if (mqttClient != null) {
             if (!mqttClient.isConnected() && !reconnectPending && !shouldExit) {
-                mqtt_connect();
+                new mqttConnectThread().execute();
             }
         }
     }
@@ -196,8 +192,8 @@ public class TTNMapperService extends Service implements GoogleApiClient.Connect
             connOpts.setUserName(mApplication.getTtnApplicationId());
             connOpts.setPassword(mApplication.getTtnAccessKey().toCharArray());
             connOpts.setAutomaticReconnect(true);
-            connOpts.setConnectionTimeout(10);
-            connOpts.setKeepAliveInterval(60);
+            connOpts.setConnectionTimeout(5);
+            connOpts.setKeepAliveInterval(30);
 
             mqttClient.connect(connOpts);
 
@@ -218,7 +214,7 @@ public class TTNMapperService extends Service implements GoogleApiClient.Connect
                                     //Do something after 100ms
                                     Log.d(TAG, "Should restart MQTT now");
                                     reconnectPending = false;
-                                    mqtt_connect();
+                                    new mqttConnectThread().execute();
                                 }
                             }, 10000);
                             reconnectPending = true;
@@ -238,7 +234,7 @@ public class TTNMapperService extends Service implements GoogleApiClient.Connect
                     if (mApplication.getLatestAcc() > 20) {
                         Log.d(TAG, "Packet received, GPS not accurate enough " + message.toString());
                         Log.d(TAG, message.isDuplicate() + "");
-                        sendNotification("Packet received, but location of phone is not accurate enough (>20m). Try going outside.\nCurrent accuracy: " +
+                        sendNotification("Packet received but not logged. Location is not accurate enough (>20m). Try going outside.\nCurrent accuracy: " +
                                 (Math.round(mApplication.getLatestAcc() * 100) / 100) + " metres\n" +
                                 (new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.ENGLISH).format(new Date())));
                     } else if (mApplication.getLatestLat() != 0 && mApplication.getLatestLon() != 0) {
@@ -290,7 +286,7 @@ public class TTNMapperService extends Service implements GoogleApiClient.Connect
                             //Do something after 100ms
                             Log.d(TAG, "Should restart MQTT now");
                             reconnectPending = false;
-                            mqtt_connect();
+                            new mqttConnectThread().execute();
                         }
                     }, 10000);
                     reconnectPending = true;
@@ -306,16 +302,30 @@ public class TTNMapperService extends Service implements GoogleApiClient.Connect
         try {
             SharedPreferences myPrefs = getSharedPreferences(SettingConstants.PREFERENCES, MODE_PRIVATE);
             if (myPrefs.getBoolean(SettingConstants.SOUNDON, SettingConstants.SOUNDON_DEFAULT)) {
-                if (ringtone != null) {
-                    ringtone.stop();
-                }
-
-                ringtone = RingtoneManager.getRingtone(getApplicationContext(), Uri.parse(myPrefs.getString(SettingConstants.SOUNDFILE, SettingConstants.SOUNDFILE_DEFAULT)));
-                ringtone.play();
+                MediaPlayer mediaPlayer = new MediaPlayer();
+                mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+                mediaPlayer.setDataSource(getApplicationContext(), Uri.parse(myPrefs.getString(SettingConstants.SOUNDFILE, SettingConstants.SOUNDFILE_DEFAULT)));
+                mediaPlayer.prepare();
+                mediaPlayer.start();
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    public void mqtt_disconnect() {
+        if (mqttClient != null) {
+            if (mqttClient.isConnected()) {
+                try {
+                    Log.d(TAG, "Disconnecting MQTT");
+                    mqttClient.disconnect();
+                    mqttClient.close();
+                } catch (MqttException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        Log.d(TAG, "MQTT disconnected");
     }
 
 //    public void logErrorToFile(String error)
@@ -350,21 +360,6 @@ public class TTNMapperService extends Service implements GoogleApiClient.Connect
 //        }
 //    }
 
-    public void mqtt_disconnect() {
-        if (mqttClient != null) {
-            if (mqttClient.isConnected()) {
-                try {
-                    Log.d(TAG, "Disconnecting MQTT");
-                    mqttClient.disconnect();
-                    mqttClient.close();
-                } catch (MqttException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-        Log.d(TAG, "MQTT disconnected");
-    }
-
     @Override
     public void onConnected(@Nullable Bundle bundle) {
         Log.d(TAG, "Google API client connected");
@@ -391,6 +386,13 @@ public class TTNMapperService extends Service implements GoogleApiClient.Connect
     public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
         Log.d(TAG, "Google API connection failed");
         stopThisService("Google play services outdated. Can not obtain a GPS location.");
+    }
+
+    private class mqttConnectThread extends AsyncTask<Void, Void, Void> {
+        protected Void doInBackground(Void... params) {
+            mqtt_connect();
+            return null;
+        }
     }
 
     public class LocalBinder extends Binder {
