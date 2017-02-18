@@ -131,7 +131,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:onClick="onToggleLordrive"
-            android:src="@drawable/gateway_dot_white_vector"
+            android:src="@drawable/gateway_dot_white"
             fab:fab_colorNormal="#D84315"
             fab:fab_colorPressed="#E64A19"
             fab:fab_label="LoRdrive mode"

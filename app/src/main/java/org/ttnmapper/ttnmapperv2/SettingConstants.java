@@ -23,6 +23,7 @@ public final class SettingConstants {
     public final static String COVERAGE = "coverage";
     public final static String SOUNDON = "soundon";
     public final static String SOUNDFILE = "soundFile";
+    public final static String ZOOMBUTTONS = "zoomButtons";
 
     public final static boolean SHOULD_UPLOAD_DEFAULT = true;
     public final static boolean IS_EXPERIMENT_DEFAULT = false;
@@ -34,4 +35,5 @@ public final class SettingConstants {
     public final static boolean COVERAGE_DEFAULT = false;
     public final static boolean SOUNDON_DEFAULT = false;
     public final static String SOUNDFILE_DEFAULT = "content://media/internal/audio/media/91"; //talitha
+    public final static boolean ZOOMBUTTONS_DEFAULT = false;
 }

@@ -120,7 +120,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:paddingTop="15dp"
-                android:text="About app"
+                android:text="Sound"
                 android:textAppearance="?android:attr/textAppearanceLarge" />
 
             <CheckBox
@@ -140,6 +140,20 @@
                 android:layout_height="wrap_content"
                 android:onClick="onChooseSound"
                 android:text="Choose notification sound" />
+
+            <TextView
+                android:id="@+id/textViewZoomHeading"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingTop="15dp"
+                android:text="Map settings"
+                android:textAppearance="?android:attr/textAppearanceLarge" />
+
+            <CheckBox
+                android:id="@+id/checkBoxZoom"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Show zoom buttons on map" />
 
             <TextView
                 android:id="@+id/textViewVersionHeading"

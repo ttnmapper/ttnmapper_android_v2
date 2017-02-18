@@ -259,6 +259,15 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         if (mMap != null) {
             clearAndReaddAllToMap();
+
+            // if the settings change, update the map
+            SharedPreferences myPrefs = this.getSharedPreferences(SettingConstants.PREFERENCES, MODE_PRIVATE);
+            if (myPrefs.getBoolean(SettingConstants.ZOOMBUTTONS, SettingConstants.ZOOMBUTTONS_DEFAULT)) {
+                mMap.getUiSettings().setZoomControlsEnabled(true);
+                mMap.setPadding(0, 0, 0, 90);
+            } else {
+                mMap.getUiSettings().setZoomControlsEnabled(false);
+            }
         }
     }
 
@@ -541,6 +550,15 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
             //Hide navigation buttons
             mMap.getUiSettings().setMapToolbarEnabled(false);
+            mMap.getUiSettings().setIndoorLevelPickerEnabled(false);
+            mMap.getUiSettings().setTiltGesturesEnabled(false);
+            mMap.getUiSettings().setRotateGesturesEnabled(false);
+
+            SharedPreferences myPrefs = this.getSharedPreferences(SettingConstants.PREFERENCES, MODE_PRIVATE);
+            if (myPrefs.getBoolean(SettingConstants.ZOOMBUTTONS, SettingConstants.ZOOMBUTTONS_DEFAULT)) {
+                mMap.getUiSettings().setZoomControlsEnabled(true);
+                mMap.setPadding(0, 0, 0, 90);
+            }
 
             // Customise the styling of the base map using a JSON object defined
             // in a raw resource file.

@@ -103,6 +103,10 @@ public class SettingsActivity extends AppCompatActivity {
         TextView soundTV = (TextView) findViewById(R.id.textViewCurrentSound);
         soundTV.setText(myPrefs.getString(SettingConstants.SOUNDFILE, SettingConstants.SOUNDFILE_DEFAULT));
 
+        //zoom
+        CheckBox zoomCb = (CheckBox) findViewById(R.id.checkBoxZoom);
+        zoomCb.setChecked(myPrefs.getBoolean(SettingConstants.ZOOMBUTTONS, SettingConstants.ZOOMBUTTONS_DEFAULT));
+
     }
 
     public void onLinkDeviceClicked(View v) {
@@ -148,6 +152,11 @@ public class SettingsActivity extends AppCompatActivity {
 
         CheckBox soundCb = (CheckBox) findViewById(R.id.checkBoxNotificationSound);
         prefsEditor.putBoolean(SettingConstants.SOUNDON, soundCb.isChecked());
+
+        //zoom
+        CheckBox zoomCb = (CheckBox) findViewById(R.id.checkBoxZoom);
+        prefsEditor.putBoolean(SettingConstants.ZOOMBUTTONS, zoomCb.isChecked());
+
         prefsEditor.apply();
 
         finish();
