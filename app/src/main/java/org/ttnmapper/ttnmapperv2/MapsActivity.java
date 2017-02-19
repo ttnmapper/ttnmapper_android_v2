@@ -691,16 +691,31 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         MyApplication mApplication = (MyApplication) getApplicationContext();
         SharedPreferences myPrefs = this.getSharedPreferences(SettingConstants.PREFERENCES, MODE_PRIVATE);
 
+        if (mMap == null) {
+            return;
+        }
         mMap.clear();
         gatewaysWithMarkers.clear();
         markersOnMap.clear();
 
-        for (Packet packet : mApplication.packets) {
-            addMeasurementMarker(packet);
+        if (mApplication.packets != null) {
+            for (Packet packet : mApplication.packets) {
+                addMeasurementMarker(packet);
 
-            if (myPrefs.getBoolean(SettingConstants.LORDRIVE, SettingConstants.LORDRIVE_DEFAULT)) {
-                addMeasurementLine(packet);
-                addGateway(packet);
+                if (myPrefs.getBoolean(SettingConstants.LORDRIVE, SettingConstants.LORDRIVE_DEFAULT)) {
+                    addMeasurementLine(packet);
+                    addGateway(packet);
+                }
+            }
+
+
+            //update counters after adding a packet
+            TextView tv = (TextView) findViewById(R.id.textViewCounters);
+            if (gatewaysWithMarkers.isEmpty()) {
+                tv.setText(mApplication.packets.size() + " packets");
+            } else {
+                tv.setText(mApplication.packets.size() + " packets\n" +
+                        gatewaysWithMarkers.size() + " gateways");
             }
         }
 
@@ -710,16 +725,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             options.tileProvider(mTileProvider);
             options.transparency((float) 0.8);
             mMap.addTileOverlay(options);
-        }
-
-
-        //update counters after adding a packet
-        TextView tv = (TextView) findViewById(R.id.textViewCounters);
-        if (gatewaysWithMarkers.isEmpty()) {
-            tv.setText(mApplication.packets.size() + " packets");
-        } else {
-            tv.setText(mApplication.packets.size() + " packets\n" +
-                    gatewaysWithMarkers.size() + " gateways");
         }
     }
 
