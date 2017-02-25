@@ -949,6 +949,11 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             and we moved more than 10 meters
             or we have not centreed the map at our location
              */
+        if (mMap == null) {
+            //prevent null pointer exceptions
+            return;
+        }
+
         SharedPreferences myPrefs = getSharedPreferences(SettingConstants.PREFERENCES, MODE_PRIVATE);
         if (myPrefs.getBoolean(SettingConstants.AUTO_CENTER, SettingConstants.AUTO_CENTER_DEFAULT)) {
             Location mapCentreLocation = new Location("");
