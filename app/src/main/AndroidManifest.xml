@@ -43,6 +43,13 @@
             android:name="com.google.android.gms.version"
             android:value="@integer/google_play_services_version" />
 
+        <!--
+            Allow fullscreen on newer extra wide screen devices like the Samsung Galaxy S8
+        -->
+        <meta-data
+            android:name="android.max_aspect"
+            android:value="2.1" />
+
         <service
             android:name=".TTNMapperService"
             android:exported="false" />
