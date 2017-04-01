@@ -17,8 +17,8 @@ android {
         applicationId "com.jpmeijers.ttnmapper"
         minSdkVersion 15
         targetSdkVersion 25
-        versionCode 26
-        versionName "2017.03.31"
+        versionCode 27
+        versionName "2017.04.01"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
     buildTypes {

@@ -2,6 +2,7 @@ package org.ttnmapper.ttnmapperv2;
 
 import android.Manifest;
 import android.app.ActivityManager;
+import android.content.ActivityNotFoundException;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
@@ -186,10 +187,14 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int id) {
                             dialog.cancel();
-                            Intent intent = new Intent(Intent.ACTION_VIEW);
-                            intent.setData(Uri.parse("market://details?id=com.google.android.gms"));
-                            startActivity(intent);
-                            finish();
+                            try {
+                                Intent intent = new Intent(Intent.ACTION_VIEW);
+                                intent.setData(Uri.parse("market://details?id=com.google.android.gms"));
+                                startActivity(intent);
+                                finish();
+                            } catch (ActivityNotFoundException e) {
+                                //play store not installed
+                            }
                         }
                     });
 
@@ -512,6 +517,10 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     public void onToggleCoverage(View v) {
+        if (mMap == null) {
+            return;
+        }
+
         com.github.clans.fab.FloatingActionButton floatingActionButton = (com.github.clans.fab.FloatingActionButton) findViewById(R.id.fabItemCoverage);
         SharedPreferences myPrefs = this.getSharedPreferences(SettingConstants.PREFERENCES, MODE_PRIVATE);
         boolean previousState = myPrefs.getBoolean(SettingConstants.COVERAGE, SettingConstants.COVERAGE_DEFAULT);
@@ -699,7 +708,16 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         markersOnMap.clear();
 
         if (mApplication.packets != null) {
-            for (Packet packet : mApplication.packets) {
+            //do not use an iterator as it causes a ConcurrentModificationException when the array list is modified in another thread
+            //the latest added packet might not be drawn
+            for (int i = 0; i < mApplication.packets.size(); i++) {
+                Packet packet = mApplication.packets.get(i);
+
+                //we had an exception where packet was a null object
+                if (packet == null) {
+                    continue;
+                }
+
                 addMeasurementMarker(packet);
 
                 if (myPrefs.getBoolean(SettingConstants.LORDRIVE, SettingConstants.LORDRIVE_DEFAULT)) {
