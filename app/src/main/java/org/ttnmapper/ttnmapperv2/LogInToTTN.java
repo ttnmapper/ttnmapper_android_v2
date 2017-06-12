@@ -414,6 +414,7 @@ public class LogInToTTN extends AppCompatActivity {
                 {
                     JSONObject currentHandler = handlers.getJSONObject(i);
                     String handlerID = currentHandler.getString("id");
+                    Log.d(TAG, "Handler: " + handlerID);
 
                     String mqttAddress = null;
                     if(currentHandler.has("mqtt_address")) {
@@ -442,20 +443,19 @@ public class LogInToTTN extends AppCompatActivity {
                         Log.d(TAG, "Handler="+handlerID+" does not have an API address");
                     }
 
-                    JSONArray apps = currentHandler.getJSONArray("metadata");
+                    if (currentHandler.has("metadata")) {
+                        JSONArray apps = currentHandler.getJSONArray("metadata");
 
-                    for(int j=0; j<apps.length(); j++)
-                    {
-                        String appID = apps.getJSONObject(j).getString("app_id");
+                        for (int j = 0; j < apps.length(); j++) {
+                            String appID = apps.getJSONObject(j).getString("app_id");
 
-                        for(TTNApplication localApp : mApplication.ttnApplications)
-                        {
-                            if(localApp.getId().equals(appID))
-                            {
-                                localApp.setHandler(handlerID);
-                                localApp.setMqttAddress(mqttAddress);
-                                localApp.setApiAddress(apiAddress);
-                                localApp.setNetAddress(netAddress);
+                            for (TTNApplication localApp : mApplication.ttnApplications) {
+                                if (localApp.getId().equals(appID)) {
+                                    localApp.setHandler(handlerID);
+                                    localApp.setMqttAddress(mqttAddress);
+                                    localApp.setApiAddress(apiAddress);
+                                    localApp.setNetAddress(netAddress);
+                                }
                             }
                         }
                     }
@@ -556,7 +556,7 @@ public class LogInToTTN extends AppCompatActivity {
                        ]
                        }
                     */
-                    System.out.println(devicesResponse.getBody());
+                    Log.d(TAG, devicesResponse.getBody());
                     JSONArray devices = new JSONObject(devicesResponse.getBody()).getJSONArray("devices");
                     for(int i=0; i<devices.length(); i++)
                     {

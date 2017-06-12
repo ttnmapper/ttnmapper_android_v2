@@ -34,6 +34,7 @@ public final class SettingConstants {
     public final static boolean LORDRIVE_DEFAULT = true;
     public final static boolean COVERAGE_DEFAULT = false;
     public final static boolean SOUNDON_DEFAULT = false;
-    public final static String SOUNDFILE_DEFAULT = "content://media/internal/audio/media/91"; //talitha
+    //public final static String SOUNDFILE_DEFAULT = "content://media/internal/audio/media/91"; //talitha
+    public final static String SOUNDFILE_DEFAULT = "content://media/internal/audio/media/66"; //Beryllium
     public final static boolean ZOOMBUTTONS_DEFAULT = false;
 }

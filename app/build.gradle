@@ -4,21 +4,21 @@ buildscript {
     }
 
     dependencies {
-        classpath 'io.fabric.tools:gradle:1.+'
+        classpath 'io.fabric.tools:gradle:1.22.2'
     }
 }
 apply plugin: 'com.android.application'
 apply plugin: 'io.fabric'
 
 android {
-    compileSdkVersion 25
+    compileSdkVersion 26
     buildToolsVersion "25.0.0"
     defaultConfig {
         applicationId "com.jpmeijers.ttnmapper"
         minSdkVersion 15
-        targetSdkVersion 25
-        versionCode 27
-        versionName "2017.04.01"
+        targetSdkVersion 26
+        versionCode 28
+        versionName "2017.06.13"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
     buildTypes {
@@ -45,11 +45,11 @@ dependencies {
     androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
         exclude group: 'com.android.support', module: 'support-annotations'
     })
-    compile 'com.android.support:design:25.3.1'
-    compile 'com.android.support:appcompat-v7:25.3.1'
-    compile 'com.google.android.gms:play-services-gcm:10.2.1'
-    compile 'com.google.android.gms:play-services-maps:10.2.1'
-    compile 'com.google.android.gms:play-services-location:10.2.1'
+    compile 'com.android.support:design:26.0.0-alpha1'
+    compile 'com.android.support:appcompat-v7:26.0.0-alpha1'
+    compile 'com.google.android.gms:play-services-gcm:11.0.0'
+    compile 'com.google.android.gms:play-services-maps:11.0.0'
+    compile 'com.google.android.gms:play-services-location:11.0.0'
     testCompile 'junit:junit:4.12'
     compile 'com.github.scribejava:scribejava-apis:3.2.0'
     compile 'com.squareup.okhttp3:okhttp:3.0.1'

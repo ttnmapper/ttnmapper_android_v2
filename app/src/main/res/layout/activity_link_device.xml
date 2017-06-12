@@ -76,24 +76,39 @@
                 android:gravity="end"
                 android:textAlignment="textEnd" />
 
+            <android.support.v4.widget.Space
+                android:layout_width="match_parent"
+                android:layout_height="10dp" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="#000000" />
+
+            <android.support.v4.widget.Space
+                android:layout_width="match_parent"
+                android:layout_height="15dp" />
+
             <TextView
                 android:id="@+id/textView12"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:gravity="center"
                 android:paddingBottom="5dp"
-                android:paddingTop="25dp"
                 android:text="Log in with your The Things Network account now and select the device to link" />
 
             <Button
                 android:id="@+id/button3"
                 android:layout_width="match_parent"
                 android:layout_height="45dp"
-                android:background="#71d7c3"
+                android:background="@drawable/ttn_button"
                 android:drawableLeft="@drawable/ttn_log"
                 android:drawableStart="@drawable/ttn_log"
                 android:onClick="onClickLogIn"
-                android:text="Log in and select device" />
+                android:padding="15dp"
+                android:text="Log in and select device"
+
+                />
 
             <TextView
                 android:layout_width="match_parent"
@@ -118,8 +133,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
-        android:layout_alignParentEnd="true"
-        android:layout_alignParentRight="true"
+        android:layout_centerHorizontal="true"
         android:onClick="onClickBack"
         android:text="Close" />
 </RelativeLayout>
