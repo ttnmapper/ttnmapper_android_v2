@@ -156,6 +156,43 @@ public class MyApplication extends Application {
         prefsEditor.apply();
     }
 
+    public void setTtnBrokerByHandler(String handler) {
+        Log.d(TAG, "setting broker by handler");
+            Request request = new Request.Builder()
+                    .url("http://discovery.thethingsnetwork.org:8080/announcements/handler/" + handler)
+                    .build();
+        Log.d(TAG, "Enqueuing request");
+            httpClient.newCall(request).enqueue(new Callback() {
+                @Override
+                public void onFailure(Call call, IOException e) {
+                    e.printStackTrace();
+                }
+
+                @Override
+                public void onResponse(Call call, final Response response) throws IOException {
+                    if (!response.isSuccessful()) {
+                        throw new IOException("Unexpected code " + response);
+                    } else {
+                        String responseData = response.body().string();
+                        Log.d(TAG, "Valid response for handler from discovery server");
+                        Log.d(TAG, responseData);
+                        // do something wih the result
+                        try {
+                            JSONObject handlerData = new JSONObject(responseData);
+                            if(handlerData.has("mqtt_address")) {
+                                String broker = handlerData.getString("mqtt_address");
+                                Log.d(TAG, "Found broker: "+broker);
+                                MyApplication mApplication = (MyApplication) getApplicationContext();
+                                mApplication.setTtnBroker(broker);
+                            }
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+            });
+    }
+
     public boolean isShouldUpload() {
         return shouldUpload;
     }

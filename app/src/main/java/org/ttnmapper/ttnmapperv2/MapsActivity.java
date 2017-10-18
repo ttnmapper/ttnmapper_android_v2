@@ -25,6 +25,7 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.SwitchCompat;
+import android.text.Html;
 import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
@@ -151,6 +152,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
 
+
         // hide top bar
         getSupportActionBar().hide();
 
@@ -170,6 +172,12 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         setFABcolors();
 
         MyApplication mApplication = (MyApplication) getApplicationContext();
+
+
+        // Store the intent data to chekc later
+        Intent intent = getIntent();
+        final Uri data = intent.getData();
+
 
         /*
          * First check if google play services are available for location and maps
@@ -208,6 +216,47 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
             AlertDialog alert11 = builder1.create();
             alert11.show();
+        } else if (data != null && data.getHost().equals("app.ttnmapper.org")) {
+            /*
+             * If we were startup up by an URL intent, ask if we should use the passed values.
+             *
+             */
+            AlertDialog.Builder builder1 = new AlertDialog.Builder(MapsActivity.this);
+            builder1.setMessage(Html.fromHtml("<b>Do you want to link this device for mapping?</b><br /><br />" +
+                    "<b>AppID:</b> " + data.getQueryParameter("appid") + "<br />" +
+                    "<b>Handler:</b> " + data.getQueryParameter("handler")+"<br />" +
+                    "<b>DevID:</b> " + data.getQueryParameter("devid")));
+            builder1.setCancelable(true);
+
+            builder1.setPositiveButton(
+                    "Yes",
+                    new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int id) {
+                            dialog.cancel();
+                            // Discover handler mqtt address - http://discovery.thethingsnetwork.org:8080/announcements/handler/
+                            // Link the device
+                            MyApplication mApplication = (MyApplication) getApplicationContext();
+                            mApplication.setTtnApplicationId(data.getQueryParameter("appid"));
+                            mApplication.setTtnDeviceId(data.getQueryParameter("devid"));
+                            mApplication.setTtnAccessKey(data.getQueryParameter("accesskey"));
+                            mApplication.setTtnBrokerByHandler(data.getQueryParameter("handler"));
+
+                            Answers.getInstance().logCustom(new CustomEvent("Device configure").putCustomAttribute("method", "link"));
+                        }
+                    });
+
+            builder1.setNegativeButton(
+                    "No",
+                    new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int id) {
+                            dialog.cancel();
+                        }
+                    });
+
+            AlertDialog alert11 = builder1.create();
+            alert11.show();
+
+
         } else if (!mApplication.isConfigured()) {
             AlertDialog.Builder builder1 = new AlertDialog.Builder(MapsActivity.this);
             builder1.setMessage("To map coverage you need to link a device to this app. Click on Link device to log into your The Things Network account and choose a device.\n\nThis app subscribes to the linked device to receive packets from it. When a packet is received it is assumed that the linked device is relatively close to this phone. The phone's GPS location and metadata of the packet is used to draw a coverage map.\n\nYou can link a device at a later stage, or change the linked device from the options menu.");

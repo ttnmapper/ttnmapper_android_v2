@@ -61,6 +61,14 @@
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
+                <!-- http://app.ttnmapper.org/?appid=tech-day-la&handler=ttn-handler-us-west&accesskey=ttn-account-v2.YaG7ZktRIgfmDIOk0Ec649IivZasqQNSNlRRDWFAZKY&devid=tdla-1 -->
+            </intent-filter>
+            <intent-filter>
+                <data android:scheme="https" android:host="app.ttnmapper.org"/>
+                <data android:scheme="http" android:host="app.ttnmapper.org"/>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
         <activity

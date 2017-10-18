@@ -17,8 +17,8 @@ android {
         applicationId "com.jpmeijers.ttnmapper"
         minSdkVersion 15
         targetSdkVersion 26
-        versionCode 28
-        versionName "2017.06.13"
+        versionCode 29
+        versionName "2017.10.18"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
     buildTypes {
@@ -47,9 +47,9 @@ dependencies {
     })
     compile 'com.android.support:design:26.0.0-alpha1'
     compile 'com.android.support:appcompat-v7:26.0.0-alpha1'
-    compile 'com.google.android.gms:play-services-gcm:11.0.0'
-    compile 'com.google.android.gms:play-services-maps:11.0.0'
-    compile 'com.google.android.gms:play-services-location:11.0.0'
+    compile 'com.google.android.gms:play-services-gcm:11.0.4'
+    compile 'com.google.android.gms:play-services-maps:11.0.4'
+    compile 'com.google.android.gms:play-services-location:11.0.4'
     testCompile 'junit:junit:4.12'
     compile 'com.github.scribejava:scribejava-apis:3.2.0'
     compile 'com.squareup.okhttp3:okhttp:3.0.1'
