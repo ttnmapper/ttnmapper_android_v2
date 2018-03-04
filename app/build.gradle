@@ -11,12 +11,12 @@ apply plugin: 'com.android.application'
 apply plugin: 'io.fabric'
 
 android {
-    compileSdkVersion 26
-    buildToolsVersion "25.0.0"
+    compileSdkVersion 27
+    buildToolsVersion "25.0.2"
     defaultConfig {
         applicationId "com.jpmeijers.ttnmapper"
         minSdkVersion 15
-        targetSdkVersion 26
+        targetSdkVersion 27
         versionCode 29
         versionName "2017.10.18"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
@@ -45,14 +45,14 @@ dependencies {
     androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
         exclude group: 'com.android.support', module: 'support-annotations'
     })
-    compile 'com.android.support:design:26.0.0-alpha1'
-    compile 'com.android.support:appcompat-v7:26.0.0-alpha1'
-    compile 'com.google.android.gms:play-services-gcm:11.0.4'
-    compile 'com.google.android.gms:play-services-maps:11.0.4'
-    compile 'com.google.android.gms:play-services-location:11.0.4'
+    compile 'com.android.support:design:27.1.0'
+    compile 'com.android.support:appcompat-v7:27.1.0'
+    compile 'com.google.android.gms:play-services-gcm:11.8.0'
+    compile 'com.google.android.gms:play-services-maps:11.8.0'
+    compile 'com.google.android.gms:play-services-location:11.8.0'
     testCompile 'junit:junit:4.12'
     compile 'com.github.scribejava:scribejava-apis:3.2.0'
-    compile 'com.squareup.okhttp3:okhttp:3.0.1'
+    compile 'com.squareup.okhttp3:okhttp:3.7.0'
     compile 'org.eclipse.paho:org.eclipse.paho.client.mqttv3:1.1.0'
     compile 'org.eclipse.paho:org.eclipse.paho.android.service:1.1.1'
     compile 'com.github.clans:fab:1.6.4'
