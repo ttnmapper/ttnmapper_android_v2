@@ -588,8 +588,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             floatingActionButton.setColorPressedResId(R.color.fab_green_light);
 
             CoverageTileProvider mTileProvider = new CoverageTileProvider(256, 256, getString(R.string.ttnmapper_tms_url));
+            CanvasTileProvider mHRTileProvider = new CanvasTileProvider(mTileProvider);
             TileOverlayOptions options = new TileOverlayOptions();
-            options.tileProvider(mTileProvider);
+            options.tileProvider(mHRTileProvider);
             options.transparency((float) 0.8);
             mMap.addTileOverlay(options);
         }
@@ -662,10 +663,10 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         if (myPrefs.getBoolean(SettingConstants.COVERAGE, SettingConstants.COVERAGE_DEFAULT)) {
             CoverageTileProvider mTileProvider = new CoverageTileProvider(256, 256, getString(R.string.ttnmapper_tms_url));
+            CanvasTileProvider mHRTileProvider = new CanvasTileProvider(mTileProvider);
             TileOverlayOptions options = new TileOverlayOptions();
-            options.tileProvider(mTileProvider);
+            options.tileProvider(mHRTileProvider);
             options.transparency((float) 0.8);
-
             mMap.addTileOverlay(options);
         }
 
@@ -788,8 +789,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         if (myPrefs.getBoolean(SettingConstants.COVERAGE, SettingConstants.COVERAGE_DEFAULT)) {
             CoverageTileProvider mTileProvider = new CoverageTileProvider(256, 256, getString(R.string.ttnmapper_tms_url));
+            CanvasTileProvider mHRTileProvider = new CanvasTileProvider(mTileProvider);
             TileOverlayOptions options = new TileOverlayOptions();
-            options.tileProvider(mTileProvider);
+            options.tileProvider(mHRTileProvider);
             options.transparency((float) 0.8);
             mMap.addTileOverlay(options);
         }
