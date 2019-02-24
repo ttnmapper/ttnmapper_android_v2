@@ -20,6 +20,7 @@ import android.location.Location;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.preference.PreferenceManager;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AlertDialog;
@@ -52,6 +53,7 @@ import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.android.gms.maps.model.TileOverlayOptions;
 
 import java.util.ArrayList;
+import java.util.UUID;
 
 public class MapsActivity extends AppCompatActivity implements OnMapReadyCallback, CompoundButton.OnCheckedChangeListener {
 
@@ -178,6 +180,59 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         Intent intent = getIntent();
         final Uri data = intent.getData();
 
+        // At first run create a new installation instance ID
+        SharedPreferences myPrefs = this.getSharedPreferences(SettingConstants.PREFERENCES, MODE_PRIVATE);
+        SharedPreferences.Editor prefsEditor = myPrefs.edit();
+        if (myPrefs.contains(getString(R.string.PREF_MAPPER_IID)) && !(myPrefs.getString(getString(R.string.PREF_MAPPER_IID), "").equals(""))) {
+            // pass
+        } else {
+            prefsEditor.putString(getString(R.string.PREF_MAPPER_IID), UUID.randomUUID().toString());
+        }
+
+        /*
+        Display a warning message that this version of the app is outdated an the user should download the replacement app.
+         */
+        if (myPrefs.contains(getString(R.string.PREF_UPGRADE_MESSAGE)) && myPrefs.getBoolean(getString(R.string.PREF_UPGRADE_MESSAGE), false) ) {
+            // pass
+            Log.d(TAG, "Not alerting for update again.");
+        } else {
+            prefsEditor.putBoolean(getString(R.string.PREF_UPGRADE_MESSAGE), true);
+
+            setStatusMessage("App update available.");
+            AlertDialog.Builder builder1 = new AlertDialog.Builder(MapsActivity.this);
+            builder1.setMessage(Html.fromHtml("<b>UPDATE</b><br />This is an outdated and unsupported version of the TTN Mapper app. Please update to the new <b>TTN Mapper phone surveyor</b> app."));
+            builder1.setCancelable(true);
+
+            builder1.setPositiveButton(
+                    "Update",
+                    new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int id) {
+                            dialog.cancel();
+                            try {
+                                Intent intent = new Intent(Intent.ACTION_VIEW);
+                                intent.setData(Uri.parse("market://details?id=org.ttnmapper.phonesurveyor"));
+                                startActivity(intent);
+                                finish();
+                            } catch (ActivityNotFoundException e) {
+                                //play store not installed
+                            }
+                        }
+                    });
+
+            builder1.setNegativeButton(
+                    "Not now",
+                    new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int id) {
+                            dialog.cancel();
+                        }
+                    });
+
+            AlertDialog alert11 = builder1.create();
+            alert11.show();
+
+        }
+
+        prefsEditor.commit();
 
         /*
          * First check if google play services are available for location and maps

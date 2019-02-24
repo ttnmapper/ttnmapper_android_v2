@@ -11,7 +11,6 @@ import android.util.Log;
 import com.crashlytics.android.Crashlytics;
 import com.crashlytics.android.answers.Answers;
 import com.crashlytics.android.answers.CustomEvent;
-import com.google.android.gms.iid.InstanceID;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -467,7 +466,10 @@ public class MyApplication extends Application {
                 toPost.put(APIJsonFields.MapperPacket.ACCURACY, packet.getAccuracy());
                 toPost.put(APIJsonFields.MapperPacket.PROVIDER, packet.getProvider());
                 toPost.put(APIJsonFields.MapperPacket.MQTT_TOPIC, packet.getMqttTopic());
-                toPost.put(APIJsonFields.MapperPacket.INSTANCE_ID, InstanceID.getInstance(getApplicationContext()).getId());
+                //toPost.put(APIJsonFields.MapperPacket.INSTANCE_ID, InstanceID.getInstance(getApplicationContext()).getId());
+
+                SharedPreferences myPrefs = this.getSharedPreferences(SettingConstants.PREFERENCES, MODE_PRIVATE);
+                toPost.put(APIJsonFields.MapperPacket.INSTANCE_ID, myPrefs.getString(getString(R.string.PREF_MAPPER_IID), ""));
 
                 //set the app instance ID (https://developers.google.com/instance-id/)
                 final PackageInfo pInfo = getPackageManager().getPackageInfo(getPackageName(), 0);

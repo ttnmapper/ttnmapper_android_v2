@@ -14,4 +14,7 @@
     <string name="ttnmapper_api_upload_packet">https://ttnmapper.org/appapi/upload.php</string>
     <string name="ttnmapper_api_upload_gateway">https://ttnmapper.org/appapi/update_gateway.php</string>
     <string name="ttnmapper_tms_url">https://ttnmapper.org/tms/?tile={z}/{x}/{y}</string>
+
+    <string name="PREF_MAPPER_IID">PREF_MAPPER_IID</string>
+    <string name="PREF_UPGRADE_MESSAGE">PREF_UPGRADE_MESSAGE</string>
 </resources>
